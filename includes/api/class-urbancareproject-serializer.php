@@ -59,6 +59,10 @@ class UrbanCareProject_Serializer {
 				$data['pdfAttachment'] = $this->serialize_attachment( $value );
 				continue;
 			}
+			if ( '_ucp_media_id' === $key ) {
+				$data['media'] = $this->serialize_attachment( $value );
+				continue;
+			}
 			if ( in_array( $key, self::RELATION_FIELDS, true ) ) {
 				$data[ $public_key ] = array_values( array_filter( array_map( array( $this, 'serialize_relation' ), (array) $value ) ) );
 				continue;

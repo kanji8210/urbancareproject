@@ -39,7 +39,7 @@ class UrbanCareProject_Content_Types {
 			'ucp_partner'     => array(
 				'singular' => __( 'Partner', 'urbancareproject' ),
 				'plural'   => __( 'Partners', 'urbancareproject' ),
-				'supports' => array( 'title', 'editor', 'thumbnail', 'revisions', 'page-attributes' ),
+				'supports' => array( 'title', 'revisions' ),
 				'archive'  => true,
 			),
 			'ucp_study_site'  => array(

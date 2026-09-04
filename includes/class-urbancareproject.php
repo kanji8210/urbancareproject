@@ -45,6 +45,8 @@ class UrbanCareProject {
 		$this->loader->add_action( 'admin_init', $admin, 'register_settings' );
 		$this->loader->add_action( 'add_meta_boxes', $fields, 'add_meta_boxes' );
 		$this->loader->add_action( 'save_post', $fields, 'save', 10, 2 );
+		$this->loader->add_action( 'admin_enqueue_scripts', $fields, 'enqueue_assets' );
+		$this->loader->add_filter( 'enter_title_here', $fields, 'title_placeholder', 10, 2 );
 	}
 
 	private function define_api_hooks() {

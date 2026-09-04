@@ -48,12 +48,32 @@ class UrbanCareProject_Fields {
 		}
 	}
 
+	public function enqueue_assets( $hook ) {
+		$screen = get_current_screen();
+		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || 'ucp_partner' !== $screen->post_type ) {
+			return;
+		}
+
+		wp_enqueue_media();
+		wp_enqueue_script(
+			'urbancareproject-partner-fields',
+			URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-partner-fields.js',
+			array( 'jquery' ),
+			URBANCAREPROJECT_VERSION,
+			true
+		);
+	}
+
+	public function title_placeholder( $placeholder, $post ) {
+		return 'ucp_partner' === $post->post_type ? __( 'Partner name', 'urbancareproject' ) : $placeholder;
+	}
+
 	private function render_field( $key, $field, $value ) {
 		$id          = ltrim( $key, '_' );
 		$description = isset( $field['description'] ) ? $field['description'] : '';
 		?>
-		<p>
-			<label for="<?php echo esc_attr( $id ); ?>"><strong><?php echo esc_html( $field['label'] ); ?></strong></label><br />
+		<p class="ucp-field ucp-field--<?php echo esc_attr( $field['input'] ); ?>">
+			<label for="<?php echo esc_attr( $id ); ?>"<?php echo '_ucp_media_id' === $key ? ' data-ucp-media-label' : ''; ?>><strong><?php echo esc_html( $field['label'] ); ?></strong></label><br />
 			<?php if ( 'textarea' === $field['input'] || 'lines' === $field['input'] ) : ?>
 				<textarea class="widefat" rows="5" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>"><?php echo esc_textarea( is_array( $value ) ? implode( "\n", $value ) : $value ); ?></textarea>
 			<?php elseif ( 'ids' === $field['input'] ) : ?>
@@ -66,6 +86,16 @@ class UrbanCareProject_Fields {
 				</select>
 			<?php elseif ( 'checkbox' === $field['input'] ) : ?>
 				<input type="checkbox" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>" value="1" <?php checked( (bool) $value ); ?> />
+			<?php elseif ( 'media' === $field['input'] ) : ?>
+				<?php $preview_url = $value ? wp_get_attachment_image_url( $value, 'medium' ) : ''; ?>
+				<span class="ucp-media-field" data-ucp-media-field>
+					<span class="ucp-media-preview" data-ucp-media-preview>
+						<?php if ( $preview_url ) : ?><img src="<?php echo esc_url( $preview_url ); ?>" alt="" style="display:block;max-width:240px;max-height:160px;margin:8px 0;object-fit:contain;background:#fff;border:1px solid #dcdcde;padding:8px;" /><?php endif; ?>
+					</span>
+					<input type="hidden" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $value ); ?>" data-ucp-media-id />
+					<button type="button" class="button" data-ucp-media-select><?php esc_html_e( 'Choose media', 'urbancareproject' ); ?></button>
+					<button type="button" class="button-link-delete" data-ucp-media-remove<?php echo $value ? '' : ' hidden'; ?>><?php esc_html_e( 'Remove', 'urbancareproject' ); ?></button>
+				</span>
 			<?php else : ?>
 				<input class="widefat" type="<?php echo esc_attr( $field['input'] ); ?>" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $value ); ?>" <?php echo $field['attributes']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> />
 			<?php endif; ?>

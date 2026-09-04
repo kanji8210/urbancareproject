@@ -62,10 +62,11 @@ class UrbanCareProject_Metadata {
 				'_ucp_display_order'     => self::field( 'Display order', 'number', 'integer', 0, 'sanitize_integer' ),
 			),
 			'ucp_partner'     => array(
-				'_ucp_website_url'        => self::field( 'Website URL', 'url', 'string', '', 'sanitize_url' ),
-				'_ucp_project_role'       => self::field( 'Role in the project', 'textarea' ),
-				'_ucp_primary_contact'    => self::field( 'Primary contact' ),
-				'_ucp_display_order'      => self::field( 'Display order', 'number', 'integer', 0, 'sanitize_integer' ),
+				'_ucp_partner_type' => self::field( 'Partner type', 'select', 'string', 'institutional', 'sanitize_partner_type', '', self::partner_types() ),
+				'_ucp_media_id'     => self::field( 'Logo', 'media', 'integer', 0, 'sanitize_integer' ),
+				'_ucp_project_role' => self::field( 'Role in the project', 'textarea' ),
+				'_ucp_about'        => self::field( 'About the institution', 'textarea' ),
+				'_ucp_website_url'  => self::field( 'Website or profile URL', 'url', 'string', '', 'sanitize_url' ),
 			),
 			'ucp_study_site'  => array(
 				'_ucp_site_category'       => self::field( 'Site category' ),
@@ -94,6 +95,13 @@ class UrbanCareProject_Metadata {
 			'policy-brief'     => 'Policy brief',
 			'conference-paper' => 'Conference paper',
 			'other'            => 'Other',
+		);
+	}
+
+	public static function partner_types() {
+		return array(
+			'institutional' => 'Institutional',
+			'individual'    => 'Individual',
 		);
 	}
 
@@ -191,6 +199,11 @@ class UrbanCareProject_Metadata {
 	public static function sanitize_publication_type( $value ) {
 		$value = sanitize_key( $value );
 		return array_key_exists( $value, self::publication_types() ) ? $value : 'other';
+	}
+
+	public static function sanitize_partner_type( $value ) {
+		$value = sanitize_key( $value );
+		return array_key_exists( $value, self::partner_types() ) ? $value : 'institutional';
 	}
 
 	private static function sanitize_array( $value, $callback ) {
