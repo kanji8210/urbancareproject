@@ -57,6 +57,7 @@ class UrbanCareProject_Content_Types {
 		);
 
 		foreach ( $post_types as $post_type => $definition ) {
+			$is_project = 'ucp_project' === $post_type;
 			register_post_type(
 				$post_type,
 				array(
@@ -70,6 +71,8 @@ class UrbanCareProject_Content_Types {
 					'rewrite'            => array( 'slug' => str_replace( 'ucp_', '', $post_type ) ),
 					'show_in_nav_menus'  => false,
 					'exclude_from_search' => false,
+					'map_meta_cap'        => true,
+					'capabilities'        => $is_project ? array( 'create_posts' => 'do_not_allow' ) : array(),
 				)
 			);
 		}

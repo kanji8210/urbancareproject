@@ -26,6 +26,15 @@ class UrbanCareProject_Admin {
 
 		add_submenu_page(
 			'urbancareproject-settings',
+			__( 'Project Content', 'urbancareproject' ),
+			__( 'Project Content', 'urbancareproject' ),
+			'edit_posts',
+			'ucp-project-content',
+			array( $this, 'open_project_content' )
+		);
+
+		add_submenu_page(
+			'urbancareproject-settings',
 			__( 'Settings', 'urbancareproject' ),
 			__( 'Settings', 'urbancareproject' ),
 			'manage_options',
@@ -41,6 +50,15 @@ class UrbanCareProject_Admin {
 			'urbancareproject-stats',
 			array( $this, 'display_stats_page' )
 		);
+	}
+
+	public function open_project_content() {
+		$project_id = UrbanCareProject_Seeder::canonical_project_id();
+		if ( $project_id ) {
+			wp_safe_redirect( admin_url( 'post.php?post=' . $project_id . '&action=edit' ) );
+			exit;
+		}
+		wp_die( esc_html__( 'The canonical Project record is unavailable. Reactivate the plugin to create it.', 'urbancareproject' ) );
 	}
 
 	public function register_settings() {
