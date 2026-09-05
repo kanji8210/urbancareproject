@@ -65,18 +65,45 @@ class UrbanCareProject_Admin {
 		register_setting(
 			'urbancareproject_options_group',
 			'ucp_nextjs_url',
-			array( 'sanitize_callback' => 'esc_url_raw' )
+			array( 'sanitize_callback' => array( $this, 'sanitize_frontend_url' ) )
 		);
 		register_setting(
 			'urbancareproject_options_group',
 			'ucp_revalidate_secret',
-			array( 'sanitize_callback' => 'sanitize_text_field' )
+			array( 'sanitize_callback' => array( $this, 'sanitize_secret' ) )
 		);
 		register_setting(
 			'urbancareproject_options_group',
 			'ucp_vercel_deploy_webhook',
-			array( 'sanitize_callback' => 'esc_url_raw' )
+			array( 'sanitize_callback' => array( $this, 'sanitize_webhook_url' ) )
 		);
+	}
+
+	public function sanitize_frontend_url( $value ) {
+		return untrailingslashit( esc_url_raw( $value ) );
+	}
+
+	public function sanitize_secret( $value ) {
+		if ( isset( $_POST['ucp_clear_revalidate_secret'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return '';
+		}
+		$value = sanitize_text_field( $value );
+		return '' === $value ? get_option( 'ucp_revalidate_secret', '' ) : $value;
+	}
+
+	public function sanitize_webhook_url( $value ) {
+		if ( isset( $_POST['ucp_clear_vercel_deploy_webhook'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return '';
+		}
+		if ( '' === $value ) {
+			return get_option( 'ucp_vercel_deploy_webhook', '' );
+		}
+		$url = esc_url_raw( $value );
+		if ( 'https' !== wp_parse_url( $url, PHP_URL_SCHEME ) ) {
+			add_settings_error( 'ucp_vercel_deploy_webhook', 'ucp_webhook_https', __( 'The Vercel deploy webhook must use HTTPS.', 'urbancareproject' ) );
+			return get_option( 'ucp_vercel_deploy_webhook', '' );
+		}
+		return $url;
 	}
 
 	public function display_plugin_setup_page() {

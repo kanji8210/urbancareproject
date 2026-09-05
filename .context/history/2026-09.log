@@ -1,2 +1,5 @@
 {"event": "record", "entry_id": "ctx-20260904-194331247877-3986dc29", "category": "feature", "title": "Bootstrap Urban Care WordPress plugin", "timestamp": "2026-09-04T19:43:31Z"}
 {"event": "record", "entry_id": "ctx-20260904-221314319251-814e4102", "category": "feature", "title": "Native WordPress content management scaffold", "timestamp": "2026-09-04T22:13:14Z"}
+{"event": "record", "entry_id": "ctx-20260904-230322243451-a433576f", "category": "feature", "title": "Add custom Partner content form", "timestamp": "2026-09-04T23:03:22Z"}
+{"event": "record", "entry_id": "ctx-20260905-041912489302-26325986", "category": "decision", "title": "Synchronize published content with Next.js", "timestamp": "2026-09-05T04:19:12Z"}
+{"event": "link-commit", "entry_id": "ctx-20260905-041912489302-26325986", "commit": "56fc14d", "timestamp": "2026-09-05T04:19:12Z"}

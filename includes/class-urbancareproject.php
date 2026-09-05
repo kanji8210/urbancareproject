@@ -27,6 +27,7 @@ class UrbanCareProject {
 		require_once URBANCAREPROJECT_PATH . 'includes/admin/class-urbancareproject-fields.php';
 		require_once URBANCAREPROJECT_PATH . 'includes/api/class-urbancareproject-serializer.php';
 		require_once URBANCAREPROJECT_PATH . 'includes/api/class-urbancareproject-rest-api.php';
+		require_once URBANCAREPROJECT_PATH . 'includes/integration/class-urbancareproject-frontend-sync.php';
 
 		$this->loader = new UrbanCareProject_Loader();
 	}
@@ -37,6 +38,7 @@ class UrbanCareProject {
 		$seeder        = new UrbanCareProject_Seeder();
 		$admin = new UrbanCareProject_Admin( $this->plugin_name, $this->version );
 		$fields = new UrbanCareProject_Fields();
+		$frontend_sync = new UrbanCareProject_Frontend_Sync();
 
 		$this->loader->add_action( 'init', $content_types, 'register' );
 		$this->loader->add_action( 'init', $metadata, 'register' );
@@ -47,6 +49,10 @@ class UrbanCareProject {
 		$this->loader->add_action( 'save_post', $fields, 'save', 10, 2 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $fields, 'enqueue_assets' );
 		$this->loader->add_filter( 'enter_title_here', $fields, 'title_placeholder', 10, 2 );
+		$this->loader->add_action( 'transition_post_status', $frontend_sync, 'content_status_changed', 10, 3 );
+		$this->loader->add_action( 'save_post', $frontend_sync, 'content_saved', 20, 2 );
+		$this->loader->add_action( 'admin_post_ucp_test_revalidation', $frontend_sync, 'test_revalidation' );
+		$this->loader->add_action( 'admin_post_ucp_trigger_deploy', $frontend_sync, 'trigger_deploy' );
 	}
 
 	private function define_api_hooks() {
