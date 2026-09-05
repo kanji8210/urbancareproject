@@ -5,6 +5,9 @@
 	const mediaLabel = $('[data-ucp-media-label] strong');
 
 	function updateAdaptiveCopy() {
+		if (!typeField.length) {
+			return;
+		}
 		const individual = typeField.val() === 'individual';
 		mediaLabel.text(individual ? 'Profile photo' : 'Logo');
 		$('#ucp_about').closest('.ucp-field').find('label strong').text(individual ? 'About the individual' : 'About the institution');
@@ -20,8 +23,9 @@
 		const remove = field.find('[data-ucp-media-remove]');
 
 		field.find('[data-ucp-media-select]').on('click', function () {
+			const title = field.data('ucp-media-title') || 'Choose image';
 			const frame = wp.media({
-				title: typeField.val() === 'individual' ? 'Choose profile photo' : 'Choose organization logo',
+				title: typeField.length ? (typeField.val() === 'individual' ? 'Choose profile photo' : 'Choose organization logo') : title,
 				button: { text: 'Use this image' },
 				library: { type: 'image' },
 				multiple: false

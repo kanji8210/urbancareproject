@@ -3,3 +3,4 @@
 {"event": "record", "entry_id": "ctx-20260904-230322243451-a433576f", "category": "feature", "title": "Add custom Partner content form", "timestamp": "2026-09-04T23:03:22Z"}
 {"event": "record", "entry_id": "ctx-20260905-041912489302-26325986", "category": "decision", "title": "Synchronize published content with Next.js", "timestamp": "2026-09-05T04:19:12Z"}
 {"event": "link-commit", "entry_id": "ctx-20260905-041912489302-26325986", "commit": "56fc14d", "timestamp": "2026-09-05T04:19:12Z"}
+{"event": "record", "entry_id": "ctx-20260905-090553513155-716730b9", "category": "feature", "title": "Add Partner and Team Member custom forms", "timestamp": "2026-09-05T09:05:53Z"}

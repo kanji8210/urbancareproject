@@ -54,7 +54,7 @@ class UrbanCareProject_Metadata {
 			),
 			'ucp_team'        => array(
 				'_ucp_role'              => self::field( 'Project role' ),
-				'_ucp_partner_id'        => self::field( 'Institution / partner ID', 'number', 'integer', 0, 'sanitize_integer' ),
+				'_ucp_partner_id'        => self::field( 'Institution / partner', 'partner_select', 'integer', 0, 'sanitize_integer' ),
 				'_ucp_public_email'      => self::field( 'Public email', 'email', 'string', '', 'sanitize_email_value' ),
 				'_ucp_show_email'        => self::field( 'Show email publicly', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
 				'_ucp_profile_url'       => self::field( 'Profile URL', 'url', 'string', '', 'sanitize_url' ),
