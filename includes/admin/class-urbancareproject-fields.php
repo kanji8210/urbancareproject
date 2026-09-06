@@ -10,22 +10,36 @@ class UrbanCareProject_Fields {
 
 	public function add_meta_boxes() {
 		foreach ( UrbanCareProject_Metadata::fields() as $post_type => $fields ) {
-			if ( empty( $fields ) ) {
+			if ( empty( $fields ) || in_array( $post_type, array( 'ucp_partner', 'ucp_team' ), true ) ) {
 				continue;
 			}
 			add_meta_box( 'ucp_structured_fields', __( 'Urban Care Details', 'urbancareproject' ), array( $this, 'render' ), $post_type, 'normal', 'high' );
 		}
 
+		add_meta_box( 'ucp_partner_details', __( 'Partner Details', 'urbancareproject' ), array( $this, 'render_partner' ), 'ucp_partner', 'normal', 'high' );
+		add_meta_box( 'ucp_team_details', __( 'Team Member Details', 'urbancareproject' ), array( $this, 'render_team' ), 'ucp_team', 'normal', 'high' );
 		remove_meta_box( 'postimagediv', 'ucp_team', 'side' );
 	}
 
 	public function render( $post ) {
+		$this->render_schema_fields( $post );
+	}
+
+	public function render_partner( $post ) {
+		$this->render_schema_fields( $post );
+	}
+
+	public function render_team( $post ) {
+		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
+		$this->render_media_field( '_ucp_team_portrait_id', __( 'Portrait', 'urbancareproject' ), get_post_thumbnail_id( $post ), __( 'Choose portrait', 'urbancareproject' ) );
+		$this->render_schema_fields( $post, false );
+	}
+
+	private function render_schema_fields( $post, $include_nonce = true ) {
 		$schemas = UrbanCareProject_Metadata::fields();
 		$fields  = isset( $schemas[ $post->post_type ] ) ? $schemas[ $post->post_type ] : array();
-		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
-
-		if ( 'ucp_team' === $post->post_type ) {
-			$this->render_media_field( '_ucp_team_portrait_id', __( 'Portrait', 'urbancareproject' ), get_post_thumbnail_id( $post ), __( 'Choose portrait', 'urbancareproject' ) );
+		if ( $include_nonce ) {
+			wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
 		}
 
 		foreach ( $fields as $key => $field ) {
@@ -70,9 +84,10 @@ class UrbanCareProject_Fields {
 		}
 
 		wp_enqueue_media();
+		$asset = 'ucp_partner' === $screen->post_type ? 'partner' : 'team';
 		wp_enqueue_script(
-			'urbancareproject-partner-fields',
-			URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-partner-fields.js',
+			'urbancareproject-' . $asset . '-fields',
+			URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-' . $asset . '-fields.js',
 			array( 'jquery' ),
 			URBANCAREPROJECT_VERSION,
 			true

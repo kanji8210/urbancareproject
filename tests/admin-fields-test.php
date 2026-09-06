@@ -4,6 +4,21 @@ define( 'ABSPATH', __DIR__ );
 
 $GLOBALS['ucp_test_meta']      = array();
 $GLOBALS['ucp_test_thumbnail'] = 0;
+$GLOBALS['ucp_test_metaboxes'] = array();
+
+function __( $text ) {
+	return $text;
+}
+
+function add_meta_box( $id, $title, $callback, $post_type ) {
+	$GLOBALS['ucp_test_metaboxes'][ $post_type ] = array(
+		'id'       => $id,
+		'title'    => $title,
+		'callback' => $callback[1],
+	);
+}
+
+function remove_meta_box() {}
 
 function wp_verify_nonce( $nonce, $action ) {
 	return 'valid' === $nonce && UrbanCareProject_Fields::NONCE_ACTION === $action;
@@ -79,6 +94,15 @@ $_POST = array(
 );
 
 $fields = new UrbanCareProject_Fields();
+$fields->add_meta_boxes();
+
+if ( array( 'id' => 'ucp_partner_details', 'title' => 'Partner Details', 'callback' => 'render_partner' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_partner'] ) {
+	throw new RuntimeException( 'Partner form is not registered independently.' );
+}
+if ( array( 'id' => 'ucp_team_details', 'title' => 'Team Member Details', 'callback' => 'render_team' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_team'] ) {
+	throw new RuntimeException( 'Team Member form is not registered independently.' );
+}
+
 $fields->save( 9, $post );
 
 if ( 42 !== $GLOBALS['ucp_test_thumbnail'] ) {
@@ -102,6 +126,26 @@ if ( 0 !== $GLOBALS['ucp_test_thumbnail'] ) {
 }
 if ( false !== $GLOBALS['ucp_test_meta']['_ucp_show_email'] ) {
 	throw new RuntimeException( 'An unchecked public-email control did not save as false.' );
+}
+
+$GLOBALS['ucp_test_meta'] = array();
+$partner_post = (object) array( 'post_type' => 'ucp_partner' );
+$_POST = array(
+	UrbanCareProject_Fields::NONCE_NAME => 'valid',
+	'_ucp_partner_type'                 => 'institutional',
+	'_ucp_media_id'                     => '31',
+	'_ucp_project_role'                 => 'Research partner',
+	'_ucp_about'                        => 'Partner description',
+	'_ucp_website_url'                  => 'https://partner.example.org',
+	'_ucp_role'                         => 'This Team-only field must be ignored',
+);
+$fields->save( 10, $partner_post );
+
+if ( isset( $GLOBALS['ucp_test_meta']['_ucp_role'] ) ) {
+	throw new RuntimeException( 'A Team Member field was saved through the Partner form.' );
+}
+if ( 'Research partner' !== $GLOBALS['ucp_test_meta']['_ucp_project_role'] ) {
+	throw new RuntimeException( 'Partner form fields were not saved correctly.' );
 }
 
 echo "WordPress admin fields contract passed\n";
