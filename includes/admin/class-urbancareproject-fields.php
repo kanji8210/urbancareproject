@@ -104,6 +104,9 @@ class UrbanCareProject_Fields {
 		if ( 'ucp_partner' === $post->post_type ) {
 			return __( 'Partner name', 'urbancareproject' );
 		}
+		if ( 'ucp_study_site' === $post->post_type ) {
+			return __( 'Study site name', 'urbancareproject' );
+		}
 		return 'ucp_team' === $post->post_type ? __( 'Team member name', 'urbancareproject' ) : $placeholder;
 	}
 

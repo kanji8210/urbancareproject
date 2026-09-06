@@ -77,6 +77,7 @@ class UrbanCareProject_Metadata {
 				'_ucp_website_url'  => self::field( 'Website or profile URL', 'url', 'string', '', 'sanitize_url' ),
 			),
 			'ucp_study_site'  => array(
+				'_ucp_location_name'       => self::field( 'Location', 'text', 'string', '', 'sanitize_text', '', array() ),
 				'_ucp_site_category'       => self::field( 'Site category' ),
 				'_ucp_latitude'            => self::field( 'Latitude', 'number', 'number', null, 'sanitize_latitude', 'step="any"' ),
 				'_ucp_longitude'           => self::field( 'Longitude', 'number', 'number', null, 'sanitize_longitude', 'step="any"' ),

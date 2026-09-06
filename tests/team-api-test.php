@@ -45,6 +45,7 @@ class WP_Query {
 
 $GLOBALS['ucp_test_posts'] = array(
 	7  => (object) array( 'ID' => 7, 'post_type' => 'ucp_team', 'post_status' => 'publish', 'post_name' => 'jane-doe', 'post_content' => 'Biography' ),
+	8  => (object) array( 'ID' => 8, 'post_type' => 'ucp_study_site', 'post_status' => 'publish', 'post_name' => 'noonkopir', 'post_content' => 'Study site description' ),
 	41 => (object) array( 'ID' => 41, 'post_type' => 'ucp_publication', 'post_status' => 'publish', 'post_name' => 'published-paper', 'post_content' => '' ),
 	42 => (object) array( 'ID' => 42, 'post_type' => 'ucp_publication', 'post_status' => 'draft', 'post_name' => 'draft-paper', 'post_content' => '' ),
 );
@@ -57,6 +58,15 @@ $GLOBALS['ucp_test_meta'] = array(
 		'_ucp_public_email'            => 'private@example.org',
 		'_ucp_show_email'              => false,
 		'_ucp_display_order'           => 2,
+	),
+	8 => array(
+		'_ucp_location_name'        => 'Noonkopir, Kitengela, Kajiado County',
+		'_ucp_site_category'        => 'Community health site',
+		'_ucp_latitude'             => -1.4692,
+		'_ucp_longitude'            => 36.9586,
+		'_ucp_coordinates_verified' => true,
+		'_ucp_gallery_ids'          => array(),
+		'_ucp_related_activity_ids' => array(),
 	),
 );
 
@@ -130,6 +140,17 @@ if ( 1 !== count( $team['meta']['relatedPublicationIds'] ) || 41 !== $team['meta
 }
 if ( 'Manual paper' !== $team['meta']['selectedPublications'][0]['title'] ) {
 	throw new RuntimeException( 'Manual publications were not preserved in the Team response.' );
+}
+
+$study_site = $serializer->serialize( 8 );
+if ( 'Noonkopir, Kitengela, Kajiado County' !== $study_site['meta']['locationName'] || -1.4692 !== $study_site['meta']['latitude'] || 36.9586 !== $study_site['meta']['longitude'] ) {
+	throw new RuntimeException( 'Study Site location or verified coordinates were not serialized correctly.' );
+}
+
+$GLOBALS['ucp_test_meta'][8]['_ucp_coordinates_verified'] = false;
+$unverified_study_site = $serializer->serialize( 8 );
+if ( isset( $unverified_study_site['meta']['latitude'] ) || isset( $unverified_study_site['meta']['longitude'] ) ) {
+	throw new RuntimeException( 'Unverified Study Site coordinates were exposed by the serializer.' );
 }
 
 $api = new UrbanCareProject_REST_API();
