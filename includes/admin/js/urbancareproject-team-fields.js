@@ -34,4 +34,36 @@
 			remove.prop('hidden', true);
 		});
 	});
+
+	$('[data-ucp-publications]').each(function () {
+		const field = $(this);
+		const list = field.find('[data-ucp-publication-list]');
+		const template = field.find('[data-ucp-publication-template]').html();
+		let nextIndex = list.find('[data-ucp-publication-row]').length;
+
+		field.on('click', '[data-ucp-publication-add]', function () {
+			list.append(template.replaceAll('__INDEX__', String(nextIndex)));
+			nextIndex += 1;
+		});
+
+		field.on('click', '[data-ucp-publication-remove]', function () {
+			$(this).closest('[data-ucp-publication-row]').remove();
+		});
+
+		field.on('click', '[data-ucp-publication-up]', function () {
+			const row = $(this).closest('[data-ucp-publication-row]');
+			const previous = row.prev('[data-ucp-publication-row]');
+			if (previous.length) {
+				row.insertBefore(previous);
+			}
+		});
+
+		field.on('click', '[data-ucp-publication-down]', function () {
+			const row = $(this).closest('[data-ucp-publication-row]');
+			const next = row.next('[data-ucp-publication-row]');
+			if (next.length) {
+				row.insertAfter(next);
+			}
+		});
+	});
 })(jQuery);

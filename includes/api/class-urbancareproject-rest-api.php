@@ -75,6 +75,15 @@ class UrbanCareProject_REST_API extends WP_REST_Controller {
 			'orderby'        => 'date',
 			'order'          => 'DESC',
 		);
+		if ( 'ucp_team' === $post_type ) {
+			$args['meta_query'][] = array(
+				'relation'                   => 'OR',
+				'team_display_order'         => array( 'key' => '_ucp_display_order', 'compare' => 'EXISTS', 'type' => 'NUMERIC' ),
+				'team_display_order_missing' => array( 'key' => '_ucp_display_order', 'compare' => 'NOT EXISTS' ),
+			);
+			$args['orderby'] = array( 'team_display_order' => 'ASC', 'title' => 'ASC' );
+			$args['order']   = 'ASC';
+		}
 		$this->apply_filters( $args, $request );
 		$query = new WP_Query( $args );
 		$data  = array_values( array_filter( array_map( array( $this->serializer, 'serialize' ), $query->posts ) ) );

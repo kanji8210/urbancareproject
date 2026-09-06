@@ -10,6 +10,7 @@ class UrbanCareProject_Serializer {
 		'_ucp_related_partner_ids',
 		'_ucp_related_team_ids',
 		'_ucp_related_activity_ids',
+		'_ucp_related_publication_ids',
 	);
 
 	public function serialize( $post ) {

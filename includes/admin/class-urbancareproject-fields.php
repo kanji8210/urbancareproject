@@ -43,6 +43,9 @@ class UrbanCareProject_Fields {
 		}
 
 		foreach ( $fields as $key => $field ) {
+			if ( ! empty( $field['legacy'] ) ) {
+				continue;
+			}
 			$value = get_post_meta( $post->ID, $key, true );
 			$this->render_field( $key, $field, $value );
 		}
@@ -71,6 +74,9 @@ class UrbanCareProject_Fields {
 		}
 
 		foreach ( $schemas[ $post->post_type ] as $key => $field ) {
+			if ( ! empty( $field['legacy'] ) && ! isset( $_POST[ $key ] ) ) {
+				continue;
+			}
 			$raw   = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : ( 'checkbox' === $field['input'] ? false : $field['default'] );
 			$value = call_user_func( array( 'UrbanCareProject_Metadata', $field['sanitize'] ), $raw );
 			update_post_meta( $post_id, $key, $value );
@@ -125,6 +131,15 @@ class UrbanCareProject_Fields {
 						<option value="<?php echo esc_attr( $partner->ID ); ?>" <?php selected( (int) $value, (int) $partner->ID ); ?>><?php echo esc_html( get_the_title( $partner ) ); ?></option>
 					<?php endforeach; ?>
 				</select>
+			<?php elseif ( 'publication_select' === $field['input'] ) : ?>
+				<?php $publications = get_posts( array( 'post_type' => 'ucp_publication', 'post_status' => array( 'publish', 'draft', 'pending', 'private' ), 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) ); ?>
+				<select class="widefat" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>[]" multiple size="8">
+					<?php foreach ( $publications as $publication ) : ?>
+						<option value="<?php echo esc_attr( $publication->ID ); ?>" <?php selected( in_array( (int) $publication->ID, array_map( 'absint', (array) $value ), true ) ); ?>><?php echo esc_html( get_the_title( $publication ) ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			<?php elseif ( 'publications' === $field['input'] ) : ?>
+				<?php $this->render_publications_field( $key, (array) $value ); ?>
 			<?php elseif ( 'checkbox' === $field['input'] ) : ?>
 				<input type="checkbox" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $key ); ?>" value="1" <?php checked( (bool) $value ); ?> />
 			<?php elseif ( 'media' === $field['input'] ) : ?>
@@ -134,6 +149,38 @@ class UrbanCareProject_Fields {
 			<?php endif; ?>
 			<?php if ( $description ) : ?><span class="description"><?php echo esc_html( $description ); ?></span><?php endif; ?>
 		</p>
+		<?php
+	}
+
+	private function render_publications_field( $key, $publications ) {
+		?>
+		<div data-ucp-publications>
+			<div data-ucp-publication-list>
+				<?php foreach ( $publications as $index => $publication ) : ?>
+					<?php $this->render_publication_row( $key, $index, $publication ); ?>
+				<?php endforeach; ?>
+			</div>
+			<template data-ucp-publication-template><?php $this->render_publication_row( $key, '__INDEX__', array() ); ?></template>
+			<button type="button" class="button" data-ucp-publication-add><?php esc_html_e( 'Add publication', 'urbancareproject' ); ?></button>
+		</div>
+		<?php
+	}
+
+	private function render_publication_row( $key, $index, $publication ) {
+		$name = $key . '[' . $index . ']';
+		?>
+		<fieldset data-ucp-publication-row style="border:1px solid #dcdcde;padding:12px;margin:0 0 12px;">
+			<legend class="screen-reader-text"><?php esc_html_e( 'Selected publication', 'urbancareproject' ); ?></legend>
+			<p><label><strong><?php esc_html_e( 'Title', 'urbancareproject' ); ?></strong><br /><input class="widefat" type="text" name="<?php echo esc_attr( $name . '[title]' ); ?>" value="<?php echo esc_attr( isset( $publication['title'] ) ? $publication['title'] : '' ); ?>" /></label></p>
+			<p><label><strong><?php esc_html_e( 'Citation / journal details', 'urbancareproject' ); ?></strong><br /><textarea class="widefat" rows="3" name="<?php echo esc_attr( $name . '[citation]' ); ?>"><?php echo esc_textarea( isset( $publication['citation'] ) ? $publication['citation'] : '' ); ?></textarea></label></p>
+			<p><label><strong><?php esc_html_e( 'Publication year', 'urbancareproject' ); ?></strong><br /><input type="number" min="1000" max="<?php echo esc_attr( (int) gmdate( 'Y' ) + 1 ); ?>" name="<?php echo esc_attr( $name . '[year]' ); ?>" value="<?php echo esc_attr( isset( $publication['year'] ) ? $publication['year'] : '' ); ?>" /></label></p>
+			<p><label><strong><?php esc_html_e( 'External link / DOI', 'urbancareproject' ); ?></strong><br /><input class="widefat" type="url" name="<?php echo esc_attr( $name . '[url]' ); ?>" value="<?php echo esc_attr( isset( $publication['url'] ) ? $publication['url'] : '' ); ?>" /></label></p>
+			<p>
+				<button type="button" class="button" data-ucp-publication-up><?php esc_html_e( 'Move up', 'urbancareproject' ); ?></button>
+				<button type="button" class="button" data-ucp-publication-down><?php esc_html_e( 'Move down', 'urbancareproject' ); ?></button>
+				<button type="button" class="button-link-delete" data-ucp-publication-remove><?php esc_html_e( 'Remove', 'urbancareproject' ); ?></button>
+			</p>
+		</fieldset>
 		<?php
 	}
 

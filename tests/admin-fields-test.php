@@ -48,6 +48,10 @@ function absint( $value ) {
 	return abs( (int) $value );
 }
 
+function get_post_type( $post_id ) {
+	return in_array( (int) $post_id, array( 8, 12 ), true ) ? 'ucp_publication' : 'ucp_partner';
+}
+
 function wp_unslash( $value ) {
 	return $value;
 }
@@ -79,6 +83,23 @@ $team_fields = UrbanCareProject_Metadata::fields()['ucp_team'];
 if ( 'partner_select' !== $team_fields['_ucp_partner_id']['input'] ) {
 	throw new RuntimeException( 'Team institution is not configured as a Partner selector.' );
 }
+if ( 'text' !== $team_fields['_ucp_institutional_affiliation']['input'] ) {
+	throw new RuntimeException( 'Team institutional affiliation is not a text field.' );
+}
+if ( 'publications' !== $team_fields['_ucp_selected_publications']['input'] || 'publication_select' !== $team_fields['_ucp_related_publication_ids']['input'] ) {
+	throw new RuntimeException( 'Team publication fields are not configured correctly.' );
+}
+
+$publications = UrbanCareProject_Metadata::sanitize_publications(
+	array(
+		array( 'title' => '  Valid <b>paper</b> ', 'citation' => "Journal\nDetails", 'year' => '2025', 'url' => 'https://doi.org/10.1/example' ),
+		array( 'title' => '', 'citation' => 'Missing title', 'year' => '2024', 'url' => 'https://example.org' ),
+		array( 'title' => 'Invalid details', 'citation' => 'Citation', 'year' => '20', 'url' => 'not-a-url' ),
+	)
+);
+if ( 2 !== count( $publications ) || 'Valid paper' !== $publications[0]['title'] || 2025 !== $publications[0]['year'] || null !== $publications[1]['year'] || '' !== $publications[1]['url'] ) {
+	throw new RuntimeException( 'Selected publications were not normalized correctly.' );
+}
 
 $post = (object) array( 'post_type' => 'ucp_team' );
 $_POST = array(
@@ -86,6 +107,16 @@ $_POST = array(
 	'_ucp_team_portrait_id'             => '42',
 	'_ucp_role'                         => 'Principal investigator',
 	'_ucp_partner_id'                   => '17',
+	'_ucp_institutional_affiliation'    => 'IRD',
+	'_ucp_selected_publications'        => array(
+		array( 'title' => 'Air quality study', 'citation' => 'Example Journal', 'year' => '2023', 'url' => 'https://doi.org/10.1/study' ),
+	),
+	'_ucp_related_publication_ids'      => array( '8', '8', '12', '17', '0' ),
+	'_ucp_orcid_url'                    => 'https://orcid.org/0000-0000-0000-0000',
+	'_ucp_google_scholar_url'           => 'invalid',
+	'_ucp_researchgate_url'             => 'https://www.researchgate.net/profile/example',
+	'_ucp_portfolio_url'                => 'https://example.org/work',
+	'_ucp_linkedin_url'                 => 'https://www.linkedin.com/in/example',
 	'_ucp_public_email'                 => 'researcher@example.org',
 	'_ucp_show_email'                   => '1',
 	'_ucp_profile_url'                  => 'https://example.org/researcher',
@@ -110,6 +141,12 @@ if ( 42 !== $GLOBALS['ucp_test_thumbnail'] ) {
 }
 if ( 17 !== $GLOBALS['ucp_test_meta']['_ucp_partner_id'] || true !== $GLOBALS['ucp_test_meta']['_ucp_show_email'] ) {
 	throw new RuntimeException( 'Team Partner relationship or email visibility was not saved correctly.' );
+}
+if ( 'IRD' !== $GLOBALS['ucp_test_meta']['_ucp_institutional_affiliation'] || array( 8, 12 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_publication_ids'] ) {
+	throw new RuntimeException( 'Team affiliation or publication relationships were not saved correctly.' );
+}
+if ( 2023 !== $GLOBALS['ucp_test_meta']['_ucp_selected_publications'][0]['year'] || '' !== $GLOBALS['ucp_test_meta']['_ucp_google_scholar_url'] ) {
+	throw new RuntimeException( 'Team publication or profile URL values were not sanitized correctly.' );
 }
 if ( 2 !== count( $GLOBALS['ucp_test_meta']['_ucp_additional_links'] ) ) {
 	throw new RuntimeException( 'Team additional links were not normalized correctly.' );

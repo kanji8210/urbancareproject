@@ -53,13 +53,21 @@ class UrbanCareProject_Metadata {
 				'_ucp_featured'         => self::field( 'Featured publication', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
 			),
 			'ucp_team'        => array(
-				'_ucp_role'              => self::field( 'Project role' ),
-				'_ucp_partner_id'        => self::field( 'Institution / partner', 'partner_select', 'integer', 0, 'sanitize_integer' ),
-				'_ucp_public_email'      => self::field( 'Public email', 'email', 'string', '', 'sanitize_email_value' ),
-				'_ucp_show_email'        => self::field( 'Show email publicly', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
-				'_ucp_profile_url'       => self::field( 'Profile URL', 'url', 'string', '', 'sanitize_url' ),
-				'_ucp_additional_links'  => self::array_field( 'Additional links', 'One URL per line.', 'sanitize_url_array' ),
-				'_ucp_display_order'     => self::field( 'Display order', 'number', 'integer', 0, 'sanitize_integer' ),
+				'_ucp_role'                      => self::field( 'Project role / title' ),
+				'_ucp_institutional_affiliation' => self::field( 'Institutional affiliation' ),
+				'_ucp_selected_publications'     => self::publication_array_field(),
+				'_ucp_related_publication_ids'   => self::publication_id_array_field(),
+				'_ucp_orcid_url'                  => self::field( 'ORCID iD', 'url', 'string', '', 'sanitize_url' ),
+				'_ucp_google_scholar_url'         => self::field( 'Google Scholar profile', 'url', 'string', '', 'sanitize_url' ),
+				'_ucp_researchgate_url'           => self::field( 'ResearchGate profile', 'url', 'string', '', 'sanitize_url' ),
+				'_ucp_portfolio_url'              => self::field( 'Portfolio / media profile', 'url', 'string', '', 'sanitize_url' ),
+				'_ucp_linkedin_url'               => self::field( 'LinkedIn profile', 'url', 'string', '', 'sanitize_url' ),
+				'_ucp_public_email'               => self::field( 'Public email', 'email', 'string', '', 'sanitize_email_value' ),
+				'_ucp_show_email'                 => self::field( 'Show email publicly', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
+				'_ucp_display_order'              => self::field( 'Display order', 'number', 'integer', 0, 'sanitize_integer' ),
+				'_ucp_partner_id'                 => self::legacy_field( 'Institution / partner', 'partner_select', 'integer', 0, 'sanitize_integer' ),
+				'_ucp_profile_url'                => self::legacy_field( 'Profile URL', 'url', 'string', '', 'sanitize_url' ),
+				'_ucp_additional_links'           => self::legacy_array_field( 'Additional links', 'sanitize_url_array' ),
 			),
 			'ucp_partner'     => array(
 				'_ucp_partner_type' => self::field( 'Partner type', 'select', 'string', 'institutional', 'sanitize_partner_type', '', self::partner_types() ),
@@ -116,10 +124,44 @@ class UrbanCareProject_Metadata {
 		return $field;
 	}
 
-	private static function id_array_field( $label ) {
+	private static function id_array_field( $label, $input = 'ids' ) {
 		$field                = self::array_field( $label, 'Comma-separated WordPress IDs.', 'sanitize_id_array' );
-		$field['input']       = 'ids';
+		$field['input']       = $input;
 		$field['items_type']  = 'integer';
+		return $field;
+	}
+
+	private static function publication_array_field() {
+		$field                 = self::field( 'Selected publications', 'publications', 'array', array(), 'sanitize_publications' );
+		$field['items_type']   = 'object';
+		$field['items_schema'] = array(
+			'type'                 => 'object',
+			'additionalProperties' => false,
+			'properties'           => array(
+				'title'    => array( 'type' => 'string' ),
+				'citation' => array( 'type' => 'string' ),
+				'year'     => array( 'type' => array( 'integer', 'null' ) ),
+				'url'      => array( 'type' => 'string', 'format' => 'uri' ),
+			),
+		);
+		return $field;
+	}
+
+	private static function publication_id_array_field() {
+		$field             = self::id_array_field( 'Related CMS publications', 'publication_select' );
+		$field['sanitize'] = 'sanitize_publication_id_array';
+		return $field;
+	}
+
+	private static function legacy_field( $label, $input, $type, $default, $sanitize ) {
+		$field          = self::field( $label, $input, $type, $default, $sanitize );
+		$field['legacy'] = true;
+		return $field;
+	}
+
+	private static function legacy_array_field( $label, $sanitize ) {
+		$field           = self::array_field( $label, '', $sanitize );
+		$field['legacy'] = true;
 		return $field;
 	}
 
@@ -131,7 +173,7 @@ class UrbanCareProject_Metadata {
 		return array(
 			'schema' => array(
 				'type'  => 'array',
-				'items' => array( 'type' => $field['items_type'] ),
+				'items' => isset( $field['items_schema'] ) ? $field['items_schema'] : array( 'type' => $field['items_type'] ),
 			),
 		);
 	}
@@ -194,6 +236,46 @@ class UrbanCareProject_Metadata {
 		$values = is_array( $value ) ? $value : preg_split( '/[\s,]+/', (string) $value );
 		$values = array_filter( array_map( 'absint', $values ) );
 		return array_values( array_unique( $values ) );
+	}
+
+	public static function sanitize_publication_id_array( $value ) {
+		return array_values(
+			array_filter(
+				self::sanitize_id_array( $value ),
+				function ( $post_id ) {
+					return 'ucp_publication' === get_post_type( $post_id );
+				}
+			)
+		);
+	}
+
+	public static function sanitize_publications( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		$publications = array();
+		$maximum_year = (int) gmdate( 'Y' ) + 1;
+		foreach ( $value as $publication ) {
+			if ( ! is_array( $publication ) ) {
+				continue;
+			}
+
+			$title = sanitize_text_field( isset( $publication['title'] ) ? $publication['title'] : '' );
+			if ( '' === $title ) {
+				continue;
+			}
+
+			$year = isset( $publication['year'] ) ? absint( $publication['year'] ) : 0;
+			$publications[] = array(
+				'title'    => $title,
+				'citation' => sanitize_textarea_field( isset( $publication['citation'] ) ? $publication['citation'] : '' ),
+				'year'     => $year >= 1000 && $year <= $maximum_year ? $year : null,
+				'url'      => esc_url_raw( isset( $publication['url'] ) ? $publication['url'] : '' ),
+			);
+		}
+
+		return $publications;
 	}
 
 	public static function sanitize_publication_type( $value ) {

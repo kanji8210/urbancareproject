@@ -33,7 +33,7 @@ class UrbanCareProject_Content_Types {
 			'ucp_team'        => array(
 				'singular' => __( 'Team Member', 'urbancareproject' ),
 				'plural'   => __( 'Team Members', 'urbancareproject' ),
-				'supports' => array( 'title', 'editor', 'thumbnail', 'revisions', 'page-attributes' ),
+				'supports' => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes' ),
 				'archive'  => true,
 			),
 			'ucp_partner'     => array(
@@ -83,7 +83,7 @@ class UrbanCareProject_Content_Types {
 			'ucp_theme',
 			__( 'Research Theme', 'urbancareproject' ),
 			__( 'Research Themes', 'urbancareproject' ),
-			array( 'ucp_activity', 'ucp_publication', 'ucp_field_story' )
+			array( 'ucp_activity', 'ucp_publication', 'ucp_team', 'ucp_field_story' )
 		);
 		$this->register_taxonomy(
 			'ucp_method',
