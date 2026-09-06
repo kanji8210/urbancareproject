@@ -185,4 +185,48 @@ if ( 'Research partner' !== $GLOBALS['ucp_test_meta']['_ucp_project_role'] ) {
 	throw new RuntimeException( 'Partner form fields were not saved correctly.' );
 }
 
+$study_site_fields = UrbanCareProject_Metadata::fields()['ucp_study_site'];
+$expected_study_site_fields = array(
+	'_ucp_location_name',
+	'_ucp_site_category',
+	'_ucp_latitude',
+	'_ucp_longitude',
+	'_ucp_coordinates_verified',
+	'_ucp_gallery_ids',
+	'_ucp_related_activity_ids',
+);
+foreach ( $expected_study_site_fields as $key ) {
+	if ( ! isset( $study_site_fields[ $key ] ) ) {
+		throw new RuntimeException( sprintf( 'Study Site field %s is not registered.', $key ) );
+	}
+}
+
+$study_site_post = (object) array( 'post_type' => 'ucp_study_site' );
+if ( 'Study site name' !== $fields->title_placeholder( 'Add title', $study_site_post ) ) {
+	throw new RuntimeException( 'Study Site title placeholder does not identify the site-name field.' );
+}
+
+$GLOBALS['ucp_test_meta'] = array();
+$_POST = array(
+	UrbanCareProject_Fields::NONCE_NAME => 'valid',
+	'_ucp_location_name'                => '  Noonkopir, Kitengela, Kajiado County  ',
+	'_ucp_site_category'                => 'Community health site',
+	'_ucp_latitude'                     => '-1.4692',
+	'_ucp_longitude'                    => '36.9586',
+	'_ucp_coordinates_verified'         => '1',
+	'_ucp_gallery_ids'                  => '31, 32, 31',
+	'_ucp_related_activity_ids'         => '41, 42',
+);
+$fields->save( 11, $study_site_post );
+
+if ( 'Noonkopir, Kitengela, Kajiado County' !== $GLOBALS['ucp_test_meta']['_ucp_location_name'] ) {
+	throw new RuntimeException( 'Study Site location name was not sanitized and saved.' );
+}
+if ( -1.4692 !== $GLOBALS['ucp_test_meta']['_ucp_latitude'] || 36.9586 !== $GLOBALS['ucp_test_meta']['_ucp_longitude'] || true !== $GLOBALS['ucp_test_meta']['_ucp_coordinates_verified'] ) {
+	throw new RuntimeException( 'Study Site verified coordinates were not saved correctly.' );
+}
+if ( array( 31, 32 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 41, 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
+	throw new RuntimeException( 'Study Site gallery or related activities were not retained.' );
+}
+
 echo "WordPress admin fields contract passed\n";
