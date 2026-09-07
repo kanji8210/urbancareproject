@@ -64,6 +64,10 @@ class UrbanCareProject_Serializer {
 				$data['media'] = $this->serialize_attachment( $value );
 				continue;
 			}
+			if ( '_ucp_activity_phases' === $key ) {
+				$data[ $public_key ] = array_map( array( $this, 'serialize_activity_phase' ), (array) $value );
+				continue;
+			}
 			if ( in_array( $key, self::RELATION_FIELDS, true ) ) {
 				$data[ $public_key ] = array_values( array_filter( array_map( array( $this, 'serialize_relation' ), (array) $value ) ) );
 				continue;
@@ -73,6 +77,21 @@ class UrbanCareProject_Serializer {
 		}
 
 		return $data;
+	}
+
+	private function serialize_activity_phase( $phase ) {
+		if ( ! is_array( $phase ) ) {
+			return array();
+		}
+
+		return array(
+			'title'     => isset( $phase['title'] ) ? $phase['title'] : '',
+			'startDate' => isset( $phase['startDate'] ) ? $phase['startDate'] : '',
+			'endDate'   => isset( $phase['endDate'] ) ? $phase['endDate'] : '',
+			'ongoing'   => ! empty( $phase['ongoing'] ),
+			'summary'   => isset( $phase['summary'] ) ? $phase['summary'] : '',
+			'image'     => $this->serialize_attachment( isset( $phase['imageId'] ) ? $phase['imageId'] : 0 ),
+		);
 	}
 
 	private function serialize_taxonomies( $post ) {

@@ -42,6 +42,7 @@ class UrbanCareProject {
 
 		$this->loader->add_action( 'init', $content_types, 'register' );
 		$this->loader->add_action( 'init', $metadata, 'register' );
+		$this->loader->add_action( 'admin_init', $metadata, 'maybe_migrate_activity_dates' );
 		$this->loader->add_filter( 'wp_insert_post_empty_content', $seeder, 'prevent_additional_project', 10, 2 );
 		$this->loader->add_action( 'admin_menu', $admin, 'add_plugin_admin_menu' );
 		$this->loader->add_action( 'admin_init', $admin, 'register_settings' );

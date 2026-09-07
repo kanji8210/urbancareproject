@@ -12,3 +12,4 @@ delete_option( 'ucp_revalidate_secret' );
 delete_option( 'ucp_vercel_deploy_webhook' );
 delete_option( 'ucp_canonical_project_id' );
 delete_option( 'ucp_content_seed_version' );
+delete_option( 'ucp_activity_date_migration_version' );

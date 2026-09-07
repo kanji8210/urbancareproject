@@ -49,7 +49,12 @@ function absint( $value ) {
 }
 
 function get_post_type( $post_id ) {
-	return in_array( (int) $post_id, array( 8, 12 ), true ) ? 'ucp_publication' : 'ucp_partner';
+	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 41 => 'ucp_study_site' );
+	return isset( $types[ (int) $post_id ] ) ? $types[ (int) $post_id ] : false;
+}
+
+function wp_attachment_is_image( $post_id ) {
+	return 31 === (int) $post_id;
 }
 
 function wp_unslash( $value ) {
@@ -133,6 +138,9 @@ if ( array( 'id' => 'ucp_partner_details', 'title' => 'Partner Details', 'callba
 if ( array( 'id' => 'ucp_team_details', 'title' => 'Team Member Details', 'callback' => 'render_team' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_team'] ) {
 	throw new RuntimeException( 'Team Member form is not registered independently.' );
 }
+if ( array( 'id' => 'ucp_activity_details', 'title' => 'Activity Details', 'callback' => 'render_activity' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_activity'] ) {
+	throw new RuntimeException( 'Activity form is not registered independently.' );
+}
 
 $fields->save( 9, $post );
 
@@ -150,6 +158,33 @@ if ( 2023 !== $GLOBALS['ucp_test_meta']['_ucp_selected_publications'][0]['year']
 }
 if ( 2 !== count( $GLOBALS['ucp_test_meta']['_ucp_additional_links'] ) ) {
 	throw new RuntimeException( 'Team additional links were not normalized correctly.' );
+}
+
+$GLOBALS['ucp_test_meta'] = array();
+$activity_post = (object) array( 'post_type' => 'ucp_activity' );
+$_POST = array(
+	UrbanCareProject_Fields::NONCE_NAME => 'valid',
+	'_ucp_start_date'                   => '2025-09-01',
+	'_ucp_end_date'                     => '2025-08-01',
+	'_ucp_ongoing'                      => '',
+	'_ucp_location'                     => 'Kitengela',
+	'_ucp_activity_phases'              => array(),
+	'_ucp_gallery_ids'                  => '31, 99',
+	'_ucp_related_team_ids'             => array( 21, 17 ),
+	'_ucp_related_partner_ids'          => array( 17, 21 ),
+	'_ucp_related_site_ids'             => array( 41, 17 ),
+	'_ucp_display_order'                => '2',
+	'_ucp_featured'                     => '1',
+);
+$fields->save( 13, $activity_post );
+if ( '' !== $GLOBALS['ucp_test_meta']['_ucp_end_date'] ) {
+	throw new RuntimeException( 'An Activity end date before its start date was retained.' );
+}
+if ( array( 31 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 21 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_team_ids'] ) {
+	throw new RuntimeException( 'Activity gallery or Team relationships were not validated by type.' );
+}
+if ( array( 17 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_partner_ids'] || array( 41 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_site_ids'] ) {
+	throw new RuntimeException( 'Activity Partner or Study Site relationships were not validated by type.' );
 }
 
 $_POST = array(

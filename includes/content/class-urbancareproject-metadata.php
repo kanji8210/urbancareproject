@@ -5,6 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class UrbanCareProject_Metadata {
+	const ACTIVITY_DATE_MIGRATION_OPTION  = 'ucp_activity_date_migration_version';
+	const ACTIVITY_DATE_MIGRATION_VERSION = '1';
+
 	public function register() {
 		foreach ( self::fields() as $post_type => $fields ) {
 			foreach ( $fields as $key => $field ) {
@@ -24,6 +27,32 @@ class UrbanCareProject_Metadata {
 		}
 	}
 
+	public function maybe_migrate_activity_dates() {
+		if ( self::ACTIVITY_DATE_MIGRATION_VERSION === get_option( self::ACTIVITY_DATE_MIGRATION_OPTION, '' ) ) {
+			return;
+		}
+
+		$activity_ids = get_posts(
+			array(
+				'post_type'      => 'ucp_activity',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+		foreach ( $activity_ids as $activity_id ) {
+			if ( get_post_meta( $activity_id, '_ucp_start_date', true ) ) {
+				continue;
+			}
+			$legacy_date = self::sanitize_date( get_post_meta( $activity_id, '_ucp_activity_date', true ) );
+			if ( $legacy_date ) {
+				update_post_meta( $activity_id, '_ucp_start_date', $legacy_date );
+			}
+		}
+
+		update_option( self::ACTIVITY_DATE_MIGRATION_OPTION, self::ACTIVITY_DATE_MIGRATION_VERSION, false );
+	}
+
 	public static function fields() {
 		return array(
 			'ucp_project'     => array(
@@ -35,11 +64,18 @@ class UrbanCareProject_Metadata {
 				'_ucp_seo_description'     => self::field( 'SEO description', 'textarea' ),
 			),
 			'ucp_activity'    => array(
-				'_ucp_activity_date'       => self::field( 'Activity date', 'date', 'string', '', 'sanitize_date' ),
+				'_ucp_start_date'          => self::field( 'Start date', 'date', 'string', '', 'sanitize_date' ),
+				'_ucp_end_date'            => self::field( 'End date', 'date', 'string', '', 'sanitize_date' ),
+				'_ucp_ongoing'             => self::field( 'Ongoing programme', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
 				'_ucp_location'            => self::field( 'Location / field site', 'text' ),
-				'_ucp_gallery_ids'         => self::id_array_field( 'Gallery attachment IDs' ),
-				'_ucp_related_site_ids'    => self::id_array_field( 'Related study-site IDs' ),
-				'_ucp_related_partner_ids' => self::id_array_field( 'Related partner IDs' ),
+				'_ucp_activity_phases'     => self::activity_phase_array_field(),
+				'_ucp_gallery_ids'         => self::typed_id_array_field( 'Gallery', 'gallery', 'sanitize_image_id_array' ),
+				'_ucp_related_team_ids'    => self::typed_id_array_field( 'Team members', 'team_select', 'sanitize_team_id_array' ),
+				'_ucp_related_partner_ids' => self::typed_id_array_field( 'Partners', 'partner_multi_select', 'sanitize_partner_id_array' ),
+				'_ucp_related_site_ids'    => self::typed_id_array_field( 'Study sites', 'study_site_select', 'sanitize_study_site_id_array' ),
+				'_ucp_display_order'       => self::field( 'Display order', 'number', 'integer', 0, 'sanitize_integer', 'min="0"' ),
+				'_ucp_featured'            => self::field( 'Featured activity', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
+				'_ucp_activity_date'       => self::legacy_field( 'Activity date', 'date', 'string', '', 'sanitize_date' ),
 			),
 			'ucp_publication' => array(
 				'_ucp_author_display'   => self::field( 'Authors' ),
@@ -151,6 +187,30 @@ class UrbanCareProject_Metadata {
 	private static function publication_id_array_field() {
 		$field             = self::id_array_field( 'Related CMS publications', 'publication_select' );
 		$field['sanitize'] = 'sanitize_publication_id_array';
+		return $field;
+	}
+
+	private static function activity_phase_array_field() {
+		$field                 = self::field( 'Programme phases', 'activity_phases', 'array', array(), 'sanitize_activity_phases' );
+		$field['items_type']   = 'object';
+		$field['items_schema'] = array(
+			'type'                 => 'object',
+			'additionalProperties' => false,
+			'properties'           => array(
+				'title'     => array( 'type' => 'string' ),
+				'startDate' => array( 'type' => 'string' ),
+				'endDate'   => array( 'type' => 'string' ),
+				'ongoing'   => array( 'type' => 'boolean' ),
+				'summary'   => array( 'type' => 'string' ),
+				'imageId'   => array( 'type' => 'integer' ),
+			),
+		);
+		return $field;
+	}
+
+	private static function typed_id_array_field( $label, $input, $sanitize ) {
+		$field             = self::id_array_field( $label, $input );
+		$field['sanitize'] = $sanitize;
 		return $field;
 	}
 
@@ -279,6 +339,59 @@ class UrbanCareProject_Metadata {
 		return $publications;
 	}
 
+	public static function sanitize_activity_phases( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		$phases = array();
+		foreach ( $value as $phase ) {
+			if ( ! is_array( $phase ) ) {
+				continue;
+			}
+
+			$title = sanitize_text_field( isset( $phase['title'] ) ? $phase['title'] : '' );
+			if ( '' === $title ) {
+				continue;
+			}
+
+			$start_date = self::sanitize_date( isset( $phase['startDate'] ) ? $phase['startDate'] : '' );
+			$end_date   = self::sanitize_date( isset( $phase['endDate'] ) ? $phase['endDate'] : '' );
+			$ongoing    = self::sanitize_boolean( isset( $phase['ongoing'] ) ? $phase['ongoing'] : false );
+			if ( $ongoing || ( $start_date && $end_date && $end_date < $start_date ) ) {
+				$end_date = '';
+			}
+
+			$image_id = isset( $phase['imageId'] ) ? absint( $phase['imageId'] ) : 0;
+			$phases[] = array(
+				'title'     => $title,
+				'startDate' => $start_date,
+				'endDate'   => $end_date,
+				'ongoing'   => $ongoing,
+				'summary'   => sanitize_textarea_field( isset( $phase['summary'] ) ? $phase['summary'] : '' ),
+				'imageId'   => $image_id && wp_attachment_is_image( $image_id ) ? $image_id : 0,
+			);
+		}
+
+		return $phases;
+	}
+
+	public static function sanitize_image_id_array( $value ) {
+		return array_values( array_filter( self::sanitize_id_array( $value ), 'wp_attachment_is_image' ) );
+	}
+
+	public static function sanitize_team_id_array( $value ) {
+		return self::sanitize_post_type_id_array( $value, 'ucp_team' );
+	}
+
+	public static function sanitize_partner_id_array( $value ) {
+		return self::sanitize_post_type_id_array( $value, 'ucp_partner' );
+	}
+
+	public static function sanitize_study_site_id_array( $value ) {
+		return self::sanitize_post_type_id_array( $value, 'ucp_study_site' );
+	}
+
 	public static function sanitize_publication_type( $value ) {
 		$value = sanitize_key( $value );
 		return array_key_exists( $value, self::publication_types() ) ? $value : 'other';
@@ -293,5 +406,16 @@ class UrbanCareProject_Metadata {
 		$values = is_array( $value ) ? $value : preg_split( '/\r\n|\r|\n/', (string) $value );
 		$values = array_filter( array_map( $callback, $values ) );
 		return array_values( array_unique( $values ) );
+	}
+
+	private static function sanitize_post_type_id_array( $value, $post_type ) {
+		return array_values(
+			array_filter(
+				self::sanitize_id_array( $value ),
+				function ( $post_id ) use ( $post_type ) {
+					return $post_type === get_post_type( $post_id );
+				}
+			)
+		);
 	}
 }

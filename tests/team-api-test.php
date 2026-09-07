@@ -46,6 +46,9 @@ class WP_Query {
 $GLOBALS['ucp_test_posts'] = array(
 	7  => (object) array( 'ID' => 7, 'post_type' => 'ucp_team', 'post_status' => 'publish', 'post_name' => 'jane-doe', 'post_content' => 'Biography' ),
 	8  => (object) array( 'ID' => 8, 'post_type' => 'ucp_study_site', 'post_status' => 'publish', 'post_name' => 'noonkopir', 'post_content' => 'Study site description' ),
+	9  => (object) array( 'ID' => 9, 'post_type' => 'ucp_activity', 'post_status' => 'publish', 'post_name' => 'collective-fieldwork', 'post_content' => 'Activity narrative' ),
+	10 => (object) array( 'ID' => 10, 'post_type' => 'ucp_partner', 'post_status' => 'publish', 'post_name' => 'research-partner', 'post_content' => '' ),
+	11 => (object) array( 'ID' => 11, 'post_type' => 'ucp_team', 'post_status' => 'draft', 'post_name' => 'draft-member', 'post_content' => '' ),
 	41 => (object) array( 'ID' => 41, 'post_type' => 'ucp_publication', 'post_status' => 'publish', 'post_name' => 'published-paper', 'post_content' => '' ),
 	42 => (object) array( 'ID' => 42, 'post_type' => 'ucp_publication', 'post_status' => 'draft', 'post_name' => 'draft-paper', 'post_content' => '' ),
 );
@@ -68,6 +71,22 @@ $GLOBALS['ucp_test_meta'] = array(
 		'_ucp_gallery_ids'          => array(),
 		'_ucp_related_activity_ids' => array(),
 	),
+	9 => array(
+		'_ucp_start_date'          => '2025-09-01',
+		'_ucp_end_date'            => '',
+		'_ucp_ongoing'             => true,
+		'_ucp_location'            => 'Kitengela',
+		'_ucp_activity_phases'     => array(
+			array( 'title' => 'Resident meetings', 'startDate' => '2025-09-01', 'endDate' => '', 'ongoing' => true, 'summary' => 'Protocol discussions', 'imageId' => 51 ),
+		),
+		'_ucp_gallery_ids'         => array( 51 ),
+		'_ucp_related_team_ids'    => array( 7, 11 ),
+		'_ucp_related_partner_ids' => array( 10 ),
+		'_ucp_related_site_ids'    => array( 8 ),
+		'_ucp_display_order'       => 1,
+		'_ucp_featured'            => true,
+		'_ucp_activity_date'       => '2025-09-01',
+	),
 );
 
 function __( $text ) {
@@ -82,7 +101,8 @@ function get_post( $post ) {
 }
 
 function get_the_title( $post ) {
-	return 41 === (int) $post->ID ? 'Published paper' : ( 42 === (int) $post->ID ? 'Draft paper' : 'Dr. Jane Doe' );
+	$titles = array( 7 => 'Dr. Jane Doe', 8 => 'Noonkopir', 9 => 'Collective fieldwork', 10 => 'Research Partner', 11 => 'Draft Member', 41 => 'Published paper', 42 => 'Draft paper' );
+	return isset( $titles[ (int) $post->ID ] ) ? $titles[ (int) $post->ID ] : '';
 }
 
 function get_the_excerpt() {
@@ -117,8 +137,12 @@ function absint( $value ) {
 	return abs( (int) $value );
 }
 
-function wp_get_attachment_url() {
-	return false;
+function wp_get_attachment_url( $attachment_id ) {
+	return 51 === (int) $attachment_id ? 'https://example.org/activity.jpg' : false;
+}
+
+function wp_get_attachment_metadata( $attachment_id ) {
+	return 51 === (int) $attachment_id ? array( 'width' => 1600, 'height' => 1067 ) : array();
 }
 
 function rest_ensure_response( $data ) {
@@ -153,6 +177,17 @@ if ( isset( $unverified_study_site['meta']['latitude'] ) || isset( $unverified_s
 	throw new RuntimeException( 'Unverified Study Site coordinates were exposed by the serializer.' );
 }
 
+$activity = $serializer->serialize( 9 );
+if ( 51 !== $activity['meta']['activityPhases'][0]['image']['id'] || isset( $activity['meta']['activityPhases'][0]['imageId'] ) ) {
+	throw new RuntimeException( 'Activity phase images were not serialized as public attachment objects.' );
+}
+if ( 1 !== count( $activity['meta']['relatedTeamIds'] ) || 7 !== $activity['meta']['relatedTeamIds'][0]['id'] ) {
+	throw new RuntimeException( 'Activity Team relationships were not filtered to published records.' );
+}
+if ( 51 !== $activity['meta']['gallery'][0]['id'] || 10 !== $activity['meta']['relatedPartnerIds'][0]['id'] || 8 !== $activity['meta']['relatedSiteIds'][0]['id'] ) {
+	throw new RuntimeException( 'Activity gallery, Partner, or Study Site relations were not serialized correctly.' );
+}
+
 $api = new UrbanCareProject_REST_API();
 $api->get_collection( new UCP_Test_REST_Request( array( 'post_type' => 'ucp_team', 'page' => 1, 'per_page' => 10 ) ) );
 $query_args = $GLOBALS['ucp_test_query_args'];
@@ -163,6 +198,12 @@ if ( array( 'team_display_order' => 'ASC', 'title' => 'ASC' ) !== $query_args['o
 $display_order_query = $query_args['meta_query'][0];
 if ( 'OR' !== $display_order_query['relation'] || 'EXISTS' !== $display_order_query['team_display_order']['compare'] || 'NOT EXISTS' !== $display_order_query['team_display_order_missing']['compare'] ) {
 	throw new RuntimeException( 'Team collection ordering does not retain profiles without display-order metadata.' );
+}
+
+$api->get_collection( new UCP_Test_REST_Request( array( 'post_type' => 'ucp_activity', 'page' => 1, 'per_page' => 10 ) ) );
+$activity_query_args = $GLOBALS['ucp_test_query_args'];
+if ( array( 'activity_display_order' => 'ASC', 'activity_start_date' => 'DESC', 'title' => 'ASC' ) !== $activity_query_args['orderby'] ) {
+	throw new RuntimeException( 'Activity collection is not ordered by display order, start date, and title.' );
 }
 
 echo "WordPress Team API contract passed\n";
