@@ -49,6 +49,7 @@ $GLOBALS['ucp_test_posts'] = array(
 	9  => (object) array( 'ID' => 9, 'post_type' => 'ucp_activity', 'post_status' => 'publish', 'post_name' => 'collective-fieldwork', 'post_content' => 'Activity narrative' ),
 	10 => (object) array( 'ID' => 10, 'post_type' => 'ucp_partner', 'post_status' => 'publish', 'post_name' => 'research-partner', 'post_content' => '' ),
 	11 => (object) array( 'ID' => 11, 'post_type' => 'ucp_team', 'post_status' => 'draft', 'post_name' => 'draft-member', 'post_content' => '' ),
+	12 => (object) array( 'ID' => 12, 'post_type' => 'ucp_field_story', 'post_status' => 'publish', 'post_name' => 'research-in-action-across-kitengela', 'post_content' => 'Field Story narrative' ),
 	41 => (object) array( 'ID' => 41, 'post_type' => 'ucp_publication', 'post_status' => 'publish', 'post_name' => 'published-paper', 'post_content' => '' ),
 	42 => (object) array( 'ID' => 42, 'post_type' => 'ucp_publication', 'post_status' => 'draft', 'post_name' => 'draft-paper', 'post_content' => '' ),
 );
@@ -87,6 +88,17 @@ $GLOBALS['ucp_test_meta'] = array(
 		'_ucp_featured'            => true,
 		'_ucp_activity_date'       => '2025-09-01',
 	),
+	12 => array(
+		'_ucp_gallery_ids'          => array( 51 ),
+		'_ucp_story_lenses'         => array( array( 'title' => 'Working with residents', 'description' => 'Shared fieldwork.' ) ),
+		'_ucp_creator_credit'       => 'Text source: Bérénice Bon',
+		'_ucp_closing_statement'    => 'Shared fieldwork connects environmental change with everyday life.',
+		'_ucp_related_site_ids'     => array( 8 ),
+		'_ucp_related_team_ids'     => array( 7, 11 ),
+		'_ucp_related_activity_ids' => array( 9 ),
+		'_ucp_featured'             => true,
+		'_ucp_display_order'        => 0,
+	),
 );
 
 function __( $text ) {
@@ -101,7 +113,7 @@ function get_post( $post ) {
 }
 
 function get_the_title( $post ) {
-	$titles = array( 7 => 'Dr. Jane Doe', 8 => 'Noonkopir', 9 => 'Collective fieldwork', 10 => 'Research Partner', 11 => 'Draft Member', 41 => 'Published paper', 42 => 'Draft paper' );
+	$titles = array( 7 => 'Dr. Jane Doe', 8 => 'Noonkopir', 9 => 'Collective fieldwork', 10 => 'Research Partner', 11 => 'Draft Member', 12 => 'Research in action across Kitengela', 41 => 'Published paper', 42 => 'Draft paper' );
 	return isset( $titles[ (int) $post->ID ] ) ? $titles[ (int) $post->ID ] : '';
 }
 
@@ -188,6 +200,17 @@ if ( 51 !== $activity['meta']['gallery'][0]['id'] || 10 !== $activity['meta']['r
 	throw new RuntimeException( 'Activity gallery, Partner, or Study Site relations were not serialized correctly.' );
 }
 
+$field_story = $serializer->serialize( 12 );
+if ( 'Working with residents' !== $field_story['meta']['storyLenses'][0]['title'] || 51 !== $field_story['meta']['gallery'][0]['id'] ) {
+	throw new RuntimeException( 'Field Story lenses or gallery were not serialized correctly.' );
+}
+if ( 8 !== $field_story['meta']['relatedSiteIds'][0]['id'] || 7 !== $field_story['meta']['relatedTeamIds'][0]['id'] || 9 !== $field_story['meta']['relatedActivityIds'][0]['id'] ) {
+	throw new RuntimeException( 'Field Story relations were not serialized correctly.' );
+}
+if ( true !== $field_story['meta']['featured'] || 0 !== $field_story['meta']['displayOrder'] ) {
+	throw new RuntimeException( 'Field Story homepage priority was not serialized correctly.' );
+}
+
 $api = new UrbanCareProject_REST_API();
 $api->get_collection( new UCP_Test_REST_Request( array( 'post_type' => 'ucp_team', 'page' => 1, 'per_page' => 10 ) ) );
 $query_args = $GLOBALS['ucp_test_query_args'];
@@ -204,6 +227,12 @@ $api->get_collection( new UCP_Test_REST_Request( array( 'post_type' => 'ucp_acti
 $activity_query_args = $GLOBALS['ucp_test_query_args'];
 if ( array( 'activity_display_order' => 'ASC', 'activity_start_date' => 'DESC', 'title' => 'ASC' ) !== $activity_query_args['orderby'] ) {
 	throw new RuntimeException( 'Activity collection is not ordered by display order, start date, and title.' );
+}
+
+$api->get_collection( new UCP_Test_REST_Request( array( 'post_type' => 'ucp_field_story', 'page' => 1, 'per_page' => 10 ) ) );
+$field_story_query_args = $GLOBALS['ucp_test_query_args'];
+if ( array( 'field_story_display_order' => 'ASC', 'date' => 'DESC', 'title' => 'ASC' ) !== $field_story_query_args['orderby'] ) {
+	throw new RuntimeException( 'Field Story collection is not ordered by display order, publication date, and title.' );
 }
 
 echo "WordPress Team API contract passed\n";

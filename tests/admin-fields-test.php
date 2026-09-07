@@ -49,7 +49,7 @@ function absint( $value ) {
 }
 
 function get_post_type( $post_id ) {
-	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 41 => 'ucp_study_site' );
+	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 41 => 'ucp_study_site', 42 => 'ucp_activity' );
 	return isset( $types[ (int) $post_id ] ) ? $types[ (int) $post_id ] : false;
 }
 
@@ -148,6 +148,9 @@ if ( array( 'id' => 'ucp_team_details', 'title' => 'Team Member Details', 'callb
 }
 if ( array( 'id' => 'ucp_activity_details', 'title' => 'Activity Details', 'callback' => 'render_activity' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_activity'] ) {
 	throw new RuntimeException( 'Activity form is not registered independently.' );
+}
+if ( array( 'id' => 'ucp_field_story_details', 'title' => 'Field Story Details', 'callback' => 'render_field_story' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_field_story'] ) {
+	throw new RuntimeException( 'Field Story form is not registered independently.' );
 }
 
 $fields->save( 9, $post );
@@ -270,6 +273,61 @@ if ( -1.4692 !== $GLOBALS['ucp_test_meta']['_ucp_latitude'] || 36.9586 !== $GLOB
 }
 if ( array( 31, 32 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 41, 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
 	throw new RuntimeException( 'Study Site gallery or related activities were not retained.' );
+}
+
+$field_story_fields = UrbanCareProject_Metadata::fields()['ucp_field_story'];
+$expected_field_story_fields = array(
+	'_ucp_gallery_ids',
+	'_ucp_story_lenses',
+	'_ucp_creator_credit',
+	'_ucp_closing_statement',
+	'_ucp_related_site_ids',
+	'_ucp_related_team_ids',
+	'_ucp_related_activity_ids',
+	'_ucp_featured',
+	'_ucp_display_order',
+);
+foreach ( $expected_field_story_fields as $key ) {
+	if ( ! isset( $field_story_fields[ $key ] ) ) {
+		throw new RuntimeException( sprintf( 'Field Story field %s is not registered.', $key ) );
+	}
+}
+
+$lenses = UrbanCareProject_Metadata::sanitize_story_lenses(
+	array(
+		array( 'title' => ' Working with residents ', 'description' => ' Shared fieldwork. ' ),
+		array( 'title' => '', 'description' => 'Missing title' ),
+		'not-a-record',
+	)
+);
+if ( array( array( 'title' => 'Working with residents', 'description' => 'Shared fieldwork.' ) ) !== $lenses ) {
+	throw new RuntimeException( 'Field Story lenses were not sanitized correctly.' );
+}
+
+$field_story_post = (object) array( 'post_type' => 'ucp_field_story' );
+if ( 'Field story title' !== $fields->title_placeholder( 'Add title', $field_story_post ) ) {
+	throw new RuntimeException( 'Field Story title placeholder does not identify the story-title field.' );
+}
+$GLOBALS['ucp_test_meta'] = array();
+$_POST = array(
+	UrbanCareProject_Fields::NONCE_NAME => 'valid',
+	'_ucp_gallery_ids'                  => '31, 32, 31',
+	'_ucp_story_lenses'                 => array( array( 'title' => 'Water survey', 'description' => 'Community borehole.' ) ),
+	'_ucp_creator_credit'               => ' Text source: Bérénice Bon ',
+	'_ucp_closing_statement'            => ' Shared fieldwork connects environmental change with everyday life. ',
+	'_ucp_related_site_ids'             => array( 41, 17 ),
+	'_ucp_related_team_ids'             => array( 21, 41 ),
+	'_ucp_related_activity_ids'         => array( 42, 21 ),
+	'_ucp_featured'                     => '1',
+	'_ucp_display_order'                => '-4',
+);
+$fields->save( 12, $field_story_post );
+
+if ( array( 41 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_site_ids'] || array( 21 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_team_ids'] || array( 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
+	throw new RuntimeException( 'Field Story relations were not restricted to their expected post types.' );
+}
+if ( true !== $GLOBALS['ucp_test_meta']['_ucp_featured'] || 0 !== $GLOBALS['ucp_test_meta']['_ucp_display_order'] ) {
+	throw new RuntimeException( 'Field Story featured state or display order was not sanitized.' );
 }
 
 echo "WordPress admin fields contract passed\n";

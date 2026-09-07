@@ -122,11 +122,15 @@ class UrbanCareProject_Metadata {
 				'_ucp_related_activity_ids' => self::id_array_field( 'Related activity IDs' ),
 			),
 			'ucp_field_story' => array(
-				'_ucp_gallery_ids'       => self::id_array_field( 'Gallery attachment IDs' ),
+				'_ucp_gallery_ids'       => self::typed_id_array_field( 'Gallery', 'gallery', 'sanitize_image_id_array' ),
+				'_ucp_story_lenses'      => self::story_lens_array_field(),
 				'_ucp_creator_credit'    => self::field( 'Photographer / creator credit' ),
 				'_ucp_closing_statement' => self::field( 'Closing statement', 'textarea' ),
-				'_ucp_related_site_ids'  => self::id_array_field( 'Related study-site IDs' ),
-				'_ucp_related_team_ids'  => self::id_array_field( 'Related team-member IDs' ),
+				'_ucp_related_site_ids'  => self::typed_id_array_field( 'Study sites', 'study_site_select', 'sanitize_study_site_id_array' ),
+				'_ucp_related_team_ids'  => self::typed_id_array_field( 'Team members', 'team_select', 'sanitize_team_id_array' ),
+				'_ucp_related_activity_ids' => self::typed_id_array_field( 'Activities', 'activity_select', 'sanitize_activity_id_array' ),
+				'_ucp_featured'          => self::field( 'Feature on homepage', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
+				'_ucp_display_order'     => self::field( 'Display order', 'number', 'integer', 0, 'sanitize_nonnegative_integer', 'min="0"' ),
 			),
 		);
 	}
@@ -208,6 +212,20 @@ class UrbanCareProject_Metadata {
 		return $field;
 	}
 
+	private static function story_lens_array_field() {
+		$field                 = self::field( 'Research lenses', 'story_lenses', 'array', array(), 'sanitize_story_lenses' );
+		$field['items_type']   = 'object';
+		$field['items_schema'] = array(
+			'type'                 => 'object',
+			'additionalProperties' => false,
+			'properties'           => array(
+				'title'       => array( 'type' => 'string' ),
+				'description' => array( 'type' => 'string' ),
+			),
+		);
+		return $field;
+	}
+
 	private static function typed_id_array_field( $label, $input, $sanitize ) {
 		$field             = self::id_array_field( $label, $input );
 		$field['sanitize'] = $sanitize;
@@ -257,6 +275,10 @@ class UrbanCareProject_Metadata {
 
 	public static function sanitize_integer( $value ) {
 		return absint( $value );
+	}
+
+	public static function sanitize_nonnegative_integer( $value ) {
+		return is_numeric( $value ) && (int) $value >= 0 ? (int) $value : 0;
 	}
 
 	public static function sanitize_boolean( $value ) {
@@ -376,6 +398,28 @@ class UrbanCareProject_Metadata {
 		return $phases;
 	}
 
+	public static function sanitize_story_lenses( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		$lenses = array();
+		foreach ( $value as $lens ) {
+			if ( ! is_array( $lens ) ) {
+				continue;
+			}
+			$title = sanitize_text_field( isset( $lens['title'] ) ? $lens['title'] : '' );
+			if ( '' === $title ) {
+				continue;
+			}
+			$lenses[] = array(
+				'title'       => $title,
+				'description' => sanitize_textarea_field( isset( $lens['description'] ) ? $lens['description'] : '' ),
+			);
+		}
+		return $lenses;
+	}
+
 	public static function sanitize_image_id_array( $value ) {
 		return array_values( array_filter( self::sanitize_id_array( $value ), 'wp_attachment_is_image' ) );
 	}
@@ -390,6 +434,10 @@ class UrbanCareProject_Metadata {
 
 	public static function sanitize_study_site_id_array( $value ) {
 		return self::sanitize_post_type_id_array( $value, 'ucp_study_site' );
+	}
+
+	public static function sanitize_activity_id_array( $value ) {
+		return self::sanitize_post_type_id_array( $value, 'ucp_activity' );
 	}
 
 	public static function sanitize_publication_type( $value ) {

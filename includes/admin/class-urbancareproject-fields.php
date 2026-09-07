@@ -10,7 +10,7 @@ class UrbanCareProject_Fields {
 
 	public function add_meta_boxes() {
 		foreach ( UrbanCareProject_Metadata::fields() as $post_type => $fields ) {
-			if ( empty( $fields ) || in_array( $post_type, array( 'ucp_activity', 'ucp_partner', 'ucp_team' ), true ) ) {
+			if ( empty( $fields ) || in_array( $post_type, array( 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
 				continue;
 			}
 			add_meta_box( 'ucp_structured_fields', __( 'Urban Care Details', 'urbancareproject' ), array( $this, 'render' ), $post_type, 'normal', 'high' );
@@ -19,6 +19,7 @@ class UrbanCareProject_Fields {
 		add_meta_box( 'ucp_activity_details', __( 'Activity Details', 'urbancareproject' ), array( $this, 'render_activity' ), 'ucp_activity', 'normal', 'high' );
 		add_meta_box( 'ucp_partner_details', __( 'Partner Details', 'urbancareproject' ), array( $this, 'render_partner' ), 'ucp_partner', 'normal', 'high' );
 		add_meta_box( 'ucp_team_details', __( 'Team Member Details', 'urbancareproject' ), array( $this, 'render_team' ), 'ucp_team', 'normal', 'high' );
+		add_meta_box( 'ucp_field_story_details', __( 'Field Story Details', 'urbancareproject' ), array( $this, 'render_field_story' ), 'ucp_field_story', 'normal', 'high' );
 		remove_meta_box( 'postimagediv', 'ucp_team', 'side' );
 	}
 
@@ -71,6 +72,43 @@ class UrbanCareProject_Fields {
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
 		$this->render_media_field( '_ucp_team_portrait_id', __( 'Portrait', 'urbancareproject' ), get_post_thumbnail_id( $post ), __( 'Choose portrait', 'urbancareproject' ) );
 		$this->render_schema_fields( $post, false );
+	}
+
+	public function render_field_story( $post ) {
+		$fields = UrbanCareProject_Metadata::fields()['ucp_field_story'];
+		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
+		?>
+		<div class="ucp-field-story-editor">
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Story framing', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Set the public credit, closing line, homepage priority, and directory order.', 'urbancareproject' ); ?></p>
+				<div class="ucp-field-story-grid">
+					<?php foreach ( array( '_ucp_creator_credit', '_ucp_closing_statement', '_ucp_featured', '_ucp_display_order' ) as $key ) : ?>
+						<?php $this->render_field( $key, $fields[ $key ], get_post_meta( $post->ID, $key, true ) ); ?>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Visual narrative', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Use the Featured image panel for the lead image, then arrange supporting images here.', 'urbancareproject' ); ?></p>
+				<?php $this->render_field( '_ucp_gallery_ids', $fields['_ucp_gallery_ids'], get_post_meta( $post->ID, '_ucp_gallery_ids', true ) ); ?>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Research lenses', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Add optional thematic steps. Their public numbers follow this order.', 'urbancareproject' ); ?></p>
+				<?php $this->render_field( '_ucp_story_lenses', $fields['_ucp_story_lenses'], get_post_meta( $post->ID, '_ucp_story_lenses', true ) ); ?>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'People, places, and work', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Connect this story to existing public records.', 'urbancareproject' ); ?></p>
+				<div class="ucp-field-story-grid">
+					<?php foreach ( array( '_ucp_related_site_ids', '_ucp_related_team_ids', '_ucp_related_activity_ids' ) as $key ) : ?>
+						<?php $this->render_field( $key, $fields[ $key ], get_post_meta( $post->ID, $key, true ) ); ?>
+					<?php endforeach; ?>
+				</div>
+			</section>
+		</div>
+		<?php
 	}
 
 	private function render_schema_fields( $post, $include_nonce = true ) {
@@ -130,7 +168,7 @@ class UrbanCareProject_Fields {
 
 	public function enqueue_assets( $hook ) {
 		$screen = get_current_screen();
-		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || ! in_array( $screen->post_type, array( 'ucp_activity', 'ucp_partner', 'ucp_team' ), true ) ) {
+		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || ! in_array( $screen->post_type, array( 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
 			return;
 		}
 
@@ -158,6 +196,13 @@ class UrbanCareProject_Fields {
 				array(),
 				URBANCAREPROJECT_VERSION
 			);
+		} elseif ( 'field_story' === $asset ) {
+			wp_enqueue_style(
+				'urbancareproject-field-story-fields',
+				URBANCAREPROJECT_URL . 'includes/admin/css/urbancareproject-field-story-fields.css',
+				array(),
+				URBANCAREPROJECT_VERSION
+			);
 		}
 	}
 
@@ -170,6 +215,9 @@ class UrbanCareProject_Fields {
 		}
 		if ( 'ucp_activity' === $post->post_type ) {
 			return __( 'Programme strand title', 'urbancareproject' );
+		}
+		if ( 'ucp_field_story' === $post->post_type ) {
+			return __( 'Field story title', 'urbancareproject' );
 		}
 		return 'ucp_team' === $post->post_type ? __( 'Team member name', 'urbancareproject' ) : $placeholder;
 	}
@@ -258,14 +306,17 @@ class UrbanCareProject_Fields {
 				<?php $this->render_study_site_location_field( $key, $value ); ?>
 			<?php elseif ( 'activity_phases' === $field['input'] ) : ?>
 				<?php $this->render_activity_phases_field( $key, (array) $value ); ?>
+			<?php elseif ( 'story_lenses' === $field['input'] ) : ?>
+				<?php $this->render_story_lenses_field( $key, (array) $value ); ?>
 			<?php elseif ( 'gallery' === $field['input'] ) : ?>
 				<?php $this->render_gallery_field( $key, (array) $value ); ?>
-			<?php elseif ( in_array( $field['input'], array( 'team_select', 'partner_multi_select', 'study_site_select' ), true ) ) : ?>
+			<?php elseif ( in_array( $field['input'], array( 'team_select', 'partner_multi_select', 'study_site_select', 'activity_select' ), true ) ) : ?>
 				<?php
 				$post_types = array(
 					'team_select'          => 'ucp_team',
 					'partner_multi_select' => 'ucp_partner',
 					'study_site_select'    => 'ucp_study_site',
+					'activity_select'      => 'ucp_activity',
 				);
 				$this->render_relation_field( $key, $post_types[ $field['input'] ], (array) $value );
 				?>
@@ -334,6 +385,36 @@ class UrbanCareProject_Fields {
 				<button type="button" class="button" data-ucp-phase-up><?php esc_html_e( 'Move up', 'urbancareproject' ); ?></button>
 				<button type="button" class="button" data-ucp-phase-down><?php esc_html_e( 'Move down', 'urbancareproject' ); ?></button>
 				<button type="button" class="button-link-delete" data-ucp-phase-remove><?php esc_html_e( 'Remove phase', 'urbancareproject' ); ?></button>
+			</div>
+		</fieldset>
+		<?php
+	}
+
+	private function render_story_lenses_field( $key, $lenses ) {
+		?>
+		<div data-ucp-story-lenses data-field-name="<?php echo esc_attr( $key ); ?>">
+			<div data-ucp-story-lens-list>
+				<?php foreach ( $lenses as $index => $lens ) : ?>
+					<?php $this->render_story_lens_row( $key, $index, $lens ); ?>
+				<?php endforeach; ?>
+			</div>
+			<template data-ucp-story-lens-template><?php $this->render_story_lens_row( $key, '__INDEX__', array() ); ?></template>
+			<button type="button" class="button button-secondary" data-ucp-story-lens-add><?php esc_html_e( 'Add research lens', 'urbancareproject' ); ?></button>
+		</div>
+		<?php
+	}
+
+	private function render_story_lens_row( $key, $index, $lens ) {
+		$name = $key . '[' . $index . ']';
+		?>
+		<fieldset class="ucp-story-lens" data-ucp-story-lens-row>
+			<legend><?php esc_html_e( 'Research lens', 'urbancareproject' ); ?></legend>
+			<p><label><strong><?php esc_html_e( 'Title', 'urbancareproject' ); ?></strong><br /><input class="widefat" type="text" name="<?php echo esc_attr( $name . '[title]' ); ?>" value="<?php echo esc_attr( isset( $lens['title'] ) ? $lens['title'] : '' ); ?>" /></label></p>
+			<p><label><strong><?php esc_html_e( 'Description', 'urbancareproject' ); ?></strong><br /><textarea class="widefat" rows="3" name="<?php echo esc_attr( $name . '[description]' ); ?>"><?php echo esc_textarea( isset( $lens['description'] ) ? $lens['description'] : '' ); ?></textarea></label></p>
+			<div class="ucp-story-lens__actions">
+				<button type="button" class="button" data-ucp-story-lens-up><?php esc_html_e( 'Move up', 'urbancareproject' ); ?></button>
+				<button type="button" class="button" data-ucp-story-lens-down><?php esc_html_e( 'Move down', 'urbancareproject' ); ?></button>
+				<button type="button" class="button-link-delete" data-ucp-story-lens-remove><?php esc_html_e( 'Remove lens', 'urbancareproject' ); ?></button>
 			</div>
 		</fieldset>
 		<?php
