@@ -144,6 +144,14 @@ class UrbanCareProject_Fields {
 			true
 		);
 		if ( 'activity' === $asset ) {
+			wp_localize_script(
+				'urbancareproject-activity-fields',
+				'ucpActivityFields',
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( 'ucp_create_study_site' ),
+				)
+			);
 			wp_enqueue_style(
 				'urbancareproject-activity-fields',
 				URBANCAREPROJECT_URL . 'includes/admin/css/urbancareproject-activity-fields.css',
@@ -164,6 +172,53 @@ class UrbanCareProject_Fields {
 			return __( 'Programme strand title', 'urbancareproject' );
 		}
 		return 'ucp_team' === $post->post_type ? __( 'Team member name', 'urbancareproject' ) : $placeholder;
+	}
+
+	public function create_study_site() {
+		check_ajax_referer( 'ucp_create_study_site', 'nonce' );
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to create Study Sites.', 'urbancareproject' ) ), 403 );
+		}
+
+		$title    = sanitize_text_field( isset( $_POST['title'] ) ? wp_unslash( $_POST['title'] ) : '' );
+		$location = UrbanCareProject_Metadata::sanitize_text( isset( $_POST['location'] ) ? wp_unslash( $_POST['location'] ) : '' );
+		if ( ! $title || ! $location ) {
+			wp_send_json_error( array( 'message' => __( 'Study Site name and location are required.', 'urbancareproject' ) ), 400 );
+		}
+
+		$existing = get_posts(
+			array(
+				'post_type'      => 'ucp_study_site',
+				'post_status'    => 'any',
+				'title'          => $title,
+				'posts_per_page' => 1,
+			)
+		);
+		if ( $existing ) {
+			wp_send_json_error( array( 'message' => __( 'A Study Site with this name already exists.', 'urbancareproject' ) ), 409 );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'ucp_study_site',
+				'post_status' => 'draft',
+				'post_title'  => $title,
+			),
+			true
+		);
+		if ( is_wp_error( $post_id ) ) {
+			wp_send_json_error( array( 'message' => $post_id->get_error_message() ), 500 );
+		}
+
+		update_post_meta( $post_id, '_ucp_location_name', $location );
+		wp_send_json_success(
+			array(
+				'id'       => (int) $post_id,
+				'title'    => $title,
+				'location' => $location,
+				'label'    => sprintf( '%1$s - %2$s', $title, $location ),
+			)
+		);
 	}
 
 	private function render_field( $key, $field, $value ) {
@@ -199,6 +254,8 @@ class UrbanCareProject_Fields {
 				</select>
 			<?php elseif ( 'publications' === $field['input'] ) : ?>
 				<?php $this->render_publications_field( $key, (array) $value ); ?>
+			<?php elseif ( 'study_site_location_select' === $field['input'] ) : ?>
+				<?php $this->render_study_site_location_field( $key, $value ); ?>
 			<?php elseif ( 'activity_phases' === $field['input'] ) : ?>
 				<?php $this->render_activity_phases_field( $key, (array) $value ); ?>
 			<?php elseif ( 'gallery' === $field['input'] ) : ?>
@@ -312,6 +369,32 @@ class UrbanCareProject_Fields {
 			<?php endforeach; ?>
 		</select>
 		<span class="description"><?php esc_html_e( 'Hold Ctrl (Windows) or Command (Mac) to select multiple records.', 'urbancareproject' ); ?></span>
+		<?php
+	}
+
+	private function render_study_site_location_field( $key, $value ) {
+		$study_sites = get_posts( array( 'post_type' => 'ucp_study_site', 'post_status' => array( 'publish', 'draft', 'pending', 'private' ), 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$has_value   = false;
+		?>
+		<input class="widefat ucp-relation-search" type="search" placeholder="<?php esc_attr_e( 'Search Study Site locations', 'urbancareproject' ); ?>" aria-label="<?php esc_attr_e( 'Search Study Site locations', 'urbancareproject' ); ?>" data-ucp-location-search />
+		<select class="widefat" id="<?php echo esc_attr( ltrim( $key, '_' ) ); ?>" name="<?php echo esc_attr( $key ); ?>" data-ucp-location-select>
+			<option value=""><?php esc_html_e( 'Select a Study Site location', 'urbancareproject' ); ?></option>
+			<?php foreach ( $study_sites as $study_site ) : ?>
+				<?php $location = get_post_meta( $study_site->ID, '_ucp_location_name', true ); ?>
+				<?php if ( ! $location ) { continue; } ?>
+				<?php $selected = (string) $value === (string) $location; $has_value = $has_value || $selected; ?>
+				<option value="<?php echo esc_attr( $location ); ?>" data-site-id="<?php echo esc_attr( $study_site->ID ); ?>" <?php selected( $selected ); ?>><?php echo esc_html( sprintf( '%1$s - %2$s', get_the_title( $study_site ), $location ) ); ?></option>
+			<?php endforeach; ?>
+			<?php if ( $value && ! $has_value ) : ?><option value="<?php echo esc_attr( $value ); ?>" selected><?php echo esc_html( $value ); ?></option><?php endif; ?>
+		</select>
+		<button type="button" class="button button-secondary ucp-study-site-add" data-ucp-study-site-toggle aria-expanded="false"><?php esc_html_e( 'Add new Study Site', 'urbancareproject' ); ?></button>
+		<div class="ucp-study-site-quick-create" data-ucp-study-site-form hidden>
+			<input class="widefat" type="text" placeholder="<?php esc_attr_e( 'Study Site name', 'urbancareproject' ); ?>" data-ucp-study-site-title />
+			<input class="widefat" type="text" placeholder="<?php esc_attr_e( 'Location', 'urbancareproject' ); ?>" data-ucp-study-site-location />
+			<button type="button" class="button button-primary" data-ucp-study-site-save><?php esc_html_e( 'Create Study Site', 'urbancareproject' ); ?></button>
+			<button type="button" class="button-link" data-ucp-study-site-cancel><?php esc_html_e( 'Cancel', 'urbancareproject' ); ?></button>
+			<span class="description" data-ucp-study-site-status aria-live="polite"></span>
+		</div>
 		<?php
 	}
 

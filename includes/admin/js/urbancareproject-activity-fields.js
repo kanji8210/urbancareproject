@@ -129,4 +129,73 @@
 			$(this).prop('hidden', query && !$(this).text().toLowerCase().includes(query));
 		});
 	});
+
+	$('[data-ucp-location-search]').on('input', function () {
+		const query = $(this).val().toLowerCase().trim();
+		$(this).next('[data-ucp-location-select]').find('option').each(function () {
+			$(this).prop('hidden', query && !$(this).text().toLowerCase().includes(query));
+		});
+	});
+
+	$('[data-ucp-location-select]').on('change', function () {
+		const siteId = $(this).find('option:selected').data('site-id');
+		if (siteId) $('#ucp_related_site_ids').find('option[value="' + siteId + '"]').prop('selected', true);
+	});
+
+	$('[data-ucp-study-site-toggle]').on('click', function () {
+		const button = $(this);
+		const form = button.next('[data-ucp-study-site-form]');
+		const isOpening = form.prop('hidden');
+		form.prop('hidden', !isOpening);
+		button.attr('aria-expanded', String(isOpening));
+		if (isOpening) form.find('[data-ucp-study-site-title]').trigger('focus');
+	});
+
+	$('[data-ucp-study-site-cancel]').on('click', function () {
+		const form = $(this).closest('[data-ucp-study-site-form]');
+		form.prop('hidden', true).prev('[data-ucp-study-site-toggle]').attr('aria-expanded', 'false');
+		form.find('input').val('');
+		form.find('[data-ucp-study-site-status]').text('');
+	});
+
+	$('[data-ucp-study-site-save]').on('click', function () {
+		const button = $(this);
+		const form = button.closest('[data-ucp-study-site-form]');
+		const title = form.find('[data-ucp-study-site-title]').val().trim();
+		const location = form.find('[data-ucp-study-site-location]').val().trim();
+		const status = form.find('[data-ucp-study-site-status]');
+		if (!title || !location) {
+			status.text('Enter both a Study Site name and location.');
+			return;
+		}
+
+		button.prop('disabled', true);
+		status.text('Creating Study Site...');
+		$.post(ucpActivityFields.ajaxUrl, {
+			action: 'ucp_create_study_site',
+			nonce: ucpActivityFields.nonce,
+			title: title,
+			location: location
+		}).done(function (response) {
+			const site = response.data;
+			const locationSelect = $('[data-ucp-location-select]');
+			locationSelect.append($('<option>', { value: site.location, text: site.label, selected: true }).attr('data-site-id', site.id));
+
+			const siteSelect = $('#ucp_related_site_ids');
+			if (!siteSelect.find('option[value="' + site.id + '"]').length) {
+				siteSelect.append($('<option>', { value: site.id, text: site.title, selected: true }));
+			} else {
+				siteSelect.find('option[value="' + site.id + '"]').prop('selected', true);
+			}
+
+			form.find('input').val('');
+			status.text('Study Site created and selected.');
+			form.prop('hidden', true).prev('[data-ucp-study-site-toggle]').attr('aria-expanded', 'false');
+		}).fail(function (request) {
+			const message = request.responseJSON && request.responseJSON.data && request.responseJSON.data.message;
+			status.text(message || 'The Study Site could not be created.');
+		}).always(function () {
+			button.prop('disabled', false);
+		});
+	});
 })(jQuery);

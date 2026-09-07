@@ -117,8 +117,35 @@
 	margin-bottom: 8px;
 }
 
+.ucp-study-site-add {
+	margin-top: 8px !important;
+}
+
+.ucp-study-site-quick-create {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+	align-items: center;
+	gap: 8px;
+	margin-top: 10px;
+	padding: 12px;
+	border-left: 4px solid #2271b1;
+	background: #f6f7f7;
+}
+
+.ucp-study-site-quick-create[hidden] {
+	display: none;
+}
+
+.ucp-study-site-quick-create [data-ucp-study-site-status] {
+	grid-column: 1 / -1;
+}
+
 @media (max-width: 782px) {
 	.ucp-activity-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.ucp-study-site-quick-create {
 		grid-template-columns: 1fr;
 	}
 }

@@ -95,6 +95,14 @@ if ( 'publications' !== $team_fields['_ucp_selected_publications']['input'] || '
 	throw new RuntimeException( 'Team publication fields are not configured correctly.' );
 }
 
+$activity_fields = UrbanCareProject_Metadata::fields()['ucp_activity'];
+if ( 'study_site_location_select' !== $activity_fields['_ucp_location']['input'] ) {
+	throw new RuntimeException( 'Activity location is not configured as a Study Site location selector.' );
+}
+if ( ! method_exists( 'UrbanCareProject_Fields', 'create_study_site' ) ) {
+	throw new RuntimeException( 'Activity editor does not expose the Study Site quick-create handler.' );
+}
+
 $publications = UrbanCareProject_Metadata::sanitize_publications(
 	array(
 		array( 'title' => '  Valid <b>paper</b> ', 'citation' => "Journal\nDetails", 'year' => '2025', 'url' => 'https://doi.org/10.1/example' ),

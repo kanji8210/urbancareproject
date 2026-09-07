@@ -49,6 +49,7 @@ class UrbanCareProject {
 		$this->loader->add_action( 'add_meta_boxes', $fields, 'add_meta_boxes' );
 		$this->loader->add_action( 'save_post', $fields, 'save', 10, 2 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $fields, 'enqueue_assets' );
+		$this->loader->add_action( 'wp_ajax_ucp_create_study_site', $fields, 'create_study_site' );
 		$this->loader->add_filter( 'enter_title_here', $fields, 'title_placeholder', 10, 2 );
 		$this->loader->add_action( 'transition_post_status', $frontend_sync, 'content_status_changed', 10, 3 );
 		$this->loader->add_action( 'save_post', $frontend_sync, 'content_saved', 20, 2 );

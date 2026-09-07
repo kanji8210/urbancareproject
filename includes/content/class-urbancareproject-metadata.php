@@ -67,7 +67,7 @@ class UrbanCareProject_Metadata {
 				'_ucp_start_date'          => self::field( 'Start date', 'date', 'string', '', 'sanitize_date' ),
 				'_ucp_end_date'            => self::field( 'End date', 'date', 'string', '', 'sanitize_date' ),
 				'_ucp_ongoing'             => self::field( 'Ongoing programme', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
-				'_ucp_location'            => self::field( 'Location / field site', 'text' ),
+				'_ucp_location'            => self::field( 'Location / field site', 'study_site_location_select' ),
 				'_ucp_activity_phases'     => self::activity_phase_array_field(),
 				'_ucp_gallery_ids'         => self::typed_id_array_field( 'Gallery', 'gallery', 'sanitize_image_id_array' ),
 				'_ucp_related_team_ids'    => self::typed_id_array_field( 'Team members', 'team_select', 'sanitize_team_id_array' ),
