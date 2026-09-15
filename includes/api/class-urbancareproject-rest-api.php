@@ -6,6 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class UrbanCareProject_REST_API extends WP_REST_Controller {
 	private const COLLECTIONS = array(
+		'pages'         => 'ucp_page',
+		'galleries'     => 'ucp_gallery',
 		'activities'    => 'ucp_activity',
 		'publications'  => 'ucp_publication',
 		'team'          => 'ucp_team',

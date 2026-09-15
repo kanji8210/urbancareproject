@@ -6,6 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class UrbanCareProject_Frontend_Sync {
 	private const POST_TYPES = array(
+		'ucp_page',
+		'ucp_gallery',
 		'ucp_project',
 		'ucp_activity',
 		'ucp_publication',

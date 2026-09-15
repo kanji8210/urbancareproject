@@ -49,7 +49,7 @@ function absint( $value ) {
 }
 
 function get_post_type( $post_id ) {
-	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 41 => 'ucp_study_site', 42 => 'ucp_activity' );
+	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 41 => 'ucp_study_site', 42 => 'ucp_activity', 51 => 'ucp_gallery' );
 	return isset( $types[ (int) $post_id ] ) ? $types[ (int) $post_id ] : false;
 }
 
@@ -152,6 +152,12 @@ if ( array( 'id' => 'ucp_activity_details', 'title' => 'Activity Details', 'call
 if ( array( 'id' => 'ucp_field_story_details', 'title' => 'Field Story Details', 'callback' => 'render_field_story' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_field_story'] ) {
 	throw new RuntimeException( 'Field Story form is not registered independently.' );
 }
+if ( array( 'id' => 'ucp_page_details', 'title' => 'Editorial Page Content', 'callback' => 'render_page' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_page'] ) {
+	throw new RuntimeException( 'Editorial Page form is not registered independently.' );
+}
+if ( array( 'id' => 'ucp_gallery_details', 'title' => 'Gallery Images', 'callback' => 'render_gallery' ) !== $GLOBALS['ucp_test_metaboxes']['ucp_gallery'] ) {
+	throw new RuntimeException( 'Reusable Gallery form is not registered independently.' );
+}
 
 $fields->save( 9, $post );
 
@@ -229,6 +235,36 @@ if ( isset( $GLOBALS['ucp_test_meta']['_ucp_role'] ) ) {
 }
 if ( 'Research partner' !== $GLOBALS['ucp_test_meta']['_ucp_project_role'] ) {
 	throw new RuntimeException( 'Partner form fields were not saved correctly.' );
+}
+
+$page_fields = UrbanCareProject_Metadata::fields()['ucp_page'];
+if ( 'gallery' !== $page_fields['_ucp_gallery_ids']['input'] || 'gallery_select' !== $page_fields['_ucp_related_gallery_ids']['input'] ) {
+	throw new RuntimeException( 'Editorial Page direct and reusable gallery controls are not configured.' );
+}
+
+$GLOBALS['ucp_test_meta'] = array();
+$page_post = (object) array( 'post_type' => 'ucp_page' );
+$_POST = array(
+	UrbanCareProject_Fields::NONCE_NAME => 'valid',
+	'_ucp_page_hero_id'                => '31',
+	'_ucp_hero_eyebrow'                => '  Research platform  ',
+	'_ucp_gallery_ids'                 => '31, 99',
+	'_ucp_related_gallery_ids'         => '51, 17, 51',
+);
+$fields->save( 14, $page_post );
+if ( 31 !== $GLOBALS['ucp_test_thumbnail'] || array( 31 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] ) {
+	throw new RuntimeException( 'Editorial Page hero or direct gallery was not validated and saved.' );
+}
+if ( array( 51 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_gallery_ids'] ) {
+	throw new RuntimeException( 'Editorial Page reusable galleries were not validated by type.' );
+}
+if ( 'Research platform' !== $GLOBALS['ucp_test_meta']['_ucp_hero_eyebrow'] ) {
+	throw new RuntimeException( 'Editorial Page hero copy was not sanitized and saved.' );
+}
+
+$fields->attachment_fields_to_save( array( 'ID' => 31 ), array( 'ucp_image_credit' => '  Jane <b>Doe</b>  ' ) );
+if ( 'Jane Doe' !== $GLOBALS['ucp_test_meta']['_ucp_image_credit'] ) {
+	throw new RuntimeException( 'Attachment image credit was not sanitized.' );
 }
 
 $study_site_fields = UrbanCareProject_Metadata::fields()['ucp_study_site'];

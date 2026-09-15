@@ -12,6 +12,19 @@ class UrbanCareProject_Content_Types {
 
 	public function register_post_types() {
 		$post_types = array(
+			'ucp_page'        => array(
+				'singular' => __( 'Editorial Page', 'urbancareproject' ),
+				'plural'   => __( 'Editorial Pages', 'urbancareproject' ),
+				'supports' => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes' ),
+				'archive'  => false,
+			),
+			'ucp_gallery'     => array(
+				'singular' => __( 'Gallery', 'urbancareproject' ),
+				'plural'   => __( 'Galleries', 'urbancareproject' ),
+				'supports' => array( 'title', 'editor', 'revisions' ),
+				'archive'  => false,
+				'public'   => false,
+			),
 			'ucp_project'     => array(
 				'singular' => __( 'Project', 'urbancareproject' ),
 				'plural'   => __( 'Project Content', 'urbancareproject' ),
@@ -57,12 +70,15 @@ class UrbanCareProject_Content_Types {
 		);
 
 		foreach ( $post_types as $post_type => $definition ) {
-			$is_project = 'ucp_project' === $post_type;
+			$is_fixed_content = in_array( $post_type, array( 'ucp_page', 'ucp_project' ), true );
+			$is_public        = ! isset( $definition['public'] ) || $definition['public'];
 			register_post_type(
 				$post_type,
 				array(
 					'labels'             => $this->post_type_labels( $definition['singular'], $definition['plural'] ),
-					'public'             => true,
+					'public'             => $is_public,
+					'show_ui'            => true,
+					'publicly_queryable'  => $is_public,
 					'show_in_rest'       => true,
 					'show_in_menu'       => 'urbancareproject-settings',
 					'menu_icon'          => 'dashicons-admin-post',
@@ -70,9 +86,9 @@ class UrbanCareProject_Content_Types {
 					'has_archive'        => $definition['archive'],
 					'rewrite'            => array( 'slug' => str_replace( 'ucp_', '', $post_type ) ),
 					'show_in_nav_menus'  => false,
-					'exclude_from_search' => false,
+					'exclude_from_search' => ! $is_public,
 					'map_meta_cap'        => true,
-					'capabilities'        => $is_project ? array( 'create_posts' => 'do_not_allow' ) : array(),
+					'capabilities'        => $is_fixed_content ? array( 'create_posts' => 'do_not_allow' ) : array(),
 				)
 			);
 		}

@@ -11,6 +11,7 @@ class UrbanCareProject_Serializer {
 		'_ucp_related_team_ids',
 		'_ucp_related_activity_ids',
 		'_ucp_related_publication_ids',
+		'_ucp_related_story_ids',
 	);
 
 	public function serialize( $post ) {
@@ -54,6 +55,10 @@ class UrbanCareProject_Serializer {
 			$public_key = lcfirst( str_replace( ' ', '', ucwords( str_replace( '_', ' ', substr( $key, 5 ) ) ) ) );
 			if ( '_ucp_gallery_ids' === $key ) {
 				$data['gallery'] = array_values( array_filter( array_map( array( $this, 'serialize_attachment' ), (array) $value ) ) );
+				continue;
+			}
+			if ( '_ucp_related_gallery_ids' === $key ) {
+				$data['galleries'] = array_values( array_filter( array_map( array( $this, 'serialize_gallery' ), (array) $value ) ) );
 				continue;
 			}
 			if ( '_ucp_pdf_attachment_id' === $key ) {
@@ -119,6 +124,20 @@ class UrbanCareProject_Serializer {
 		return array( 'id' => (int) $post->ID, 'type' => $post->post_type, 'slug' => $post->post_name, 'title' => get_the_title( $post ) );
 	}
 
+	private function serialize_gallery( $post_id ) {
+		$post = get_post( absint( $post_id ) );
+		if ( ! $post || 'ucp_gallery' !== $post->post_type || 'publish' !== $post->post_status ) {
+			return null;
+		}
+		return array(
+			'id'          => (int) $post->ID,
+			'slug'        => $post->post_name,
+			'title'       => get_the_title( $post ),
+			'description' => apply_filters( 'the_content', $post->post_content ),
+			'images'      => array_values( array_filter( array_map( array( $this, 'serialize_attachment' ), (array) get_post_meta( $post->ID, '_ucp_gallery_ids', true ) ) ) ),
+		);
+	}
+
 	private function serialize_attachment( $attachment_id ) {
 		$attachment_id = absint( $attachment_id );
 		$url           = $attachment_id ? wp_get_attachment_url( $attachment_id ) : false;
@@ -130,6 +149,8 @@ class UrbanCareProject_Serializer {
 			'id'     => $attachment_id,
 			'url'    => $url,
 			'alt'    => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+			'caption' => wp_get_attachment_caption( $attachment_id ),
+			'credit'  => get_post_meta( $attachment_id, '_ucp_image_credit', true ),
 			'width'  => isset( $metadata['width'] ) ? (int) $metadata['width'] : null,
 			'height' => isset( $metadata['height'] ) ? (int) $metadata['height'] : null,
 		);

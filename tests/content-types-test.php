@@ -25,6 +25,26 @@ require dirname( __DIR__ ) . '/includes/content/class-urbancareproject-content-t
 $content_types = new UrbanCareProject_Content_Types();
 $content_types->register();
 
+if ( ! isset( $GLOBALS['ucp_test_post_types']['ucp_page'] ) || ! in_array( 'page-attributes', $GLOBALS['ucp_test_post_types']['ucp_page']['supports'], true ) ) {
+	throw new RuntimeException( 'Fixed editorial pages are not registered with page ordering support.' );
+}
+
+if ( 'do_not_allow' !== $GLOBALS['ucp_test_post_types']['ucp_page']['capabilities']['create_posts'] ) {
+	throw new RuntimeException( 'Editors can create unsupported editorial page records.' );
+}
+
+if ( ! isset( $GLOBALS['ucp_test_post_types']['ucp_gallery'] ) || ! in_array( 'editor', $GLOBALS['ucp_test_post_types']['ucp_gallery']['supports'], true ) ) {
+	throw new RuntimeException( 'Reusable galleries are not registered with editable descriptions.' );
+}
+
+if ( $GLOBALS['ucp_test_post_types']['ucp_gallery']['public'] || $GLOBALS['ucp_test_post_types']['ucp_gallery']['publicly_queryable'] || ! $GLOBALS['ucp_test_post_types']['ucp_gallery']['show_ui'] ) {
+	throw new RuntimeException( 'Reusable galleries must be editable without exposing public archive pages.' );
+}
+
+if ( isset( $GLOBALS['ucp_test_post_types']['ucp_gallery']['capabilities']['create_posts'] ) ) {
+	throw new RuntimeException( 'Editors cannot create reusable gallery records.' );
+}
+
 if ( ! in_array( 'excerpt', $GLOBALS['ucp_test_post_types']['ucp_team']['supports'], true ) ) {
 	throw new RuntimeException( 'Team profiles do not support short biographies through excerpts.' );
 }

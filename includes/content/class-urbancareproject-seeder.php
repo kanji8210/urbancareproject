@@ -7,11 +7,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class UrbanCareProject_Seeder {
 	const PROJECT_ID_OPTION = 'ucp_canonical_project_id';
 	const SEED_VERSION_OPTION = 'ucp_content_seed_version';
-	const SEED_VERSION = '2';
+	const SEED_VERSION = '3';
 
 	public function seed() {
 		$this->seed_terms();
 		$this->seed_project();
+		$this->seed_pages();
 		$this->seed_field_stories();
 		update_option( self::SEED_VERSION_OPTION, self::SEED_VERSION, false );
 	}
@@ -126,6 +127,61 @@ class UrbanCareProject_Seeder {
 			update_post_meta( $project_id, $key, $value );
 		}
 		update_option( self::PROJECT_ID_OPTION, $project_id, false );
+	}
+
+	private function seed_pages() {
+		$project_id = self::canonical_project_id();
+		$project    = $project_id ? get_post( $project_id ) : null;
+		$pages      = array(
+			'research' => array(
+				'title'   => 'Research',
+				'excerpt' => $project && $project->post_excerpt ? $project->post_excerpt : 'How Urban Care studies land, environment, health, and everyday life across a rapidly changing Kitengela.',
+				'content' => $project && $project->post_content ? $project->post_content : '<p>Urban Care brings environmental science, social science, spatial analysis, and public health together to understand rapid urban change in Kitengela.</p>',
+			),
+			'observatory' => array(
+				'title'   => 'Observatory',
+				'excerpt' => 'A spatial research platform connecting study sites, field activities, environmental evidence, and changing landscapes.',
+				'content' => '<p>Follow Urban Care across Kitengela through study sites, field activities, environmental evidence, and the changing landscapes that connect them.</p>',
+			),
+			'public-policies' => array(
+				'title'   => 'Public Policies',
+				'excerpt' => 'Research-to-policy exchange supporting municipal planning, land governance, and public action.',
+				'content' => '<p>Urban Care works with municipal teams to connect research evidence with planning, land governance, environmental management, health, and citizen participation.</p>',
+			),
+			'citizen-science' => array(
+				'title'   => 'Citizen Science',
+				'excerpt' => 'Knowledge produced with residents, schools, associations, artists, and public institutions.',
+				'content' => '<p>Residents, schools, associations, artists, and public institutions participate in observation, monitoring, dialogue, and the shared interpretation of urban change.</p>',
+			),
+		);
+
+		foreach ( $pages as $slug => $definition ) {
+			$page = get_page_by_path( $slug, OBJECT, 'ucp_page' );
+			if ( ! $page ) {
+				wp_insert_post(
+					array(
+						'post_type'    => 'ucp_page',
+						'post_status'  => 'draft',
+						'post_name'    => $slug,
+						'post_title'   => $definition['title'],
+						'post_excerpt' => $definition['excerpt'],
+						'post_content' => $definition['content'],
+					),
+					true
+				);
+				continue;
+			}
+
+			if ( 'research' === $slug && $project && '' === trim( $page->post_content ) ) {
+				wp_update_post(
+					array(
+						'ID'           => $page->ID,
+						'post_excerpt' => $page->post_excerpt ? $page->post_excerpt : $definition['excerpt'],
+						'post_content' => $definition['content'],
+					)
+				);
+			}
+		}
 	}
 
 	private function seed_field_stories() {

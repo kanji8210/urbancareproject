@@ -50,6 +50,9 @@ $GLOBALS['ucp_test_posts'] = array(
 	10 => (object) array( 'ID' => 10, 'post_type' => 'ucp_partner', 'post_status' => 'publish', 'post_name' => 'research-partner', 'post_content' => '' ),
 	11 => (object) array( 'ID' => 11, 'post_type' => 'ucp_team', 'post_status' => 'draft', 'post_name' => 'draft-member', 'post_content' => '' ),
 	12 => (object) array( 'ID' => 12, 'post_type' => 'ucp_field_story', 'post_status' => 'publish', 'post_name' => 'research-in-action-across-kitengela', 'post_content' => 'Field Story narrative' ),
+	13 => (object) array( 'ID' => 13, 'post_type' => 'ucp_page', 'post_status' => 'publish', 'post_name' => 'research', 'post_content' => '<p>Research narrative</p>' ),
+	14 => (object) array( 'ID' => 14, 'post_type' => 'ucp_gallery', 'post_status' => 'publish', 'post_name' => 'fieldwork-gallery', 'post_content' => '<p>Gallery description</p>' ),
+	15 => (object) array( 'ID' => 15, 'post_type' => 'ucp_gallery', 'post_status' => 'draft', 'post_name' => 'draft-gallery', 'post_content' => '' ),
 	41 => (object) array( 'ID' => 41, 'post_type' => 'ucp_publication', 'post_status' => 'publish', 'post_name' => 'published-paper', 'post_content' => '' ),
 	42 => (object) array( 'ID' => 42, 'post_type' => 'ucp_publication', 'post_status' => 'draft', 'post_name' => 'draft-paper', 'post_content' => '' ),
 );
@@ -99,6 +102,16 @@ $GLOBALS['ucp_test_meta'] = array(
 		'_ucp_featured'             => true,
 		'_ucp_display_order'        => 0,
 	),
+	13 => array(
+		'_ucp_gallery_ids'         => array( 51 ),
+		'_ucp_related_gallery_ids' => array( 14, 15 ),
+	),
+	14 => array(
+		'_ucp_gallery_ids' => array( 51 ),
+	),
+	51 => array(
+		'_ucp_image_credit' => 'Jane Doe',
+	),
 );
 
 function __( $text ) {
@@ -113,7 +126,7 @@ function get_post( $post ) {
 }
 
 function get_the_title( $post ) {
-	$titles = array( 7 => 'Dr. Jane Doe', 8 => 'Noonkopir', 9 => 'Collective fieldwork', 10 => 'Research Partner', 11 => 'Draft Member', 12 => 'Research in action across Kitengela', 41 => 'Published paper', 42 => 'Draft paper' );
+	$titles = array( 7 => 'Dr. Jane Doe', 8 => 'Noonkopir', 9 => 'Collective fieldwork', 10 => 'Research Partner', 11 => 'Draft Member', 12 => 'Research in action across Kitengela', 13 => 'Research', 14 => 'Fieldwork Gallery', 15 => 'Draft Gallery', 41 => 'Published paper', 42 => 'Draft paper' );
 	return isset( $titles[ (int) $post->ID ] ) ? $titles[ (int) $post->ID ] : '';
 }
 
@@ -155,6 +168,10 @@ function wp_get_attachment_url( $attachment_id ) {
 
 function wp_get_attachment_metadata( $attachment_id ) {
 	return 51 === (int) $attachment_id ? array( 'width' => 1600, 'height' => 1067 ) : array();
+}
+
+function wp_get_attachment_caption() {
+	return 'Fieldwork caption';
 }
 
 function rest_ensure_response( $data ) {
@@ -209,6 +226,14 @@ if ( 8 !== $field_story['meta']['relatedSiteIds'][0]['id'] || 7 !== $field_story
 }
 if ( true !== $field_story['meta']['featured'] || 0 !== $field_story['meta']['displayOrder'] ) {
 	throw new RuntimeException( 'Field Story homepage priority was not serialized correctly.' );
+}
+
+$page = $serializer->serialize( 13 );
+if ( 1 !== count( $page['meta']['galleries'] ) || 14 !== $page['meta']['galleries'][0]['id'] || 51 !== $page['meta']['galleries'][0]['images'][0]['id'] ) {
+	throw new RuntimeException( 'Editorial Page reusable galleries were not expanded or unpublished galleries leaked.' );
+}
+if ( 'Fieldwork caption' !== $page['meta']['gallery'][0]['caption'] || 'Jane Doe' !== $page['meta']['gallery'][0]['credit'] ) {
+	throw new RuntimeException( 'Attachment caption or image credit was not serialized.' );
 }
 
 $api = new UrbanCareProject_REST_API();

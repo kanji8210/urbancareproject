@@ -25,6 +25,7 @@ function absint( $value ) { return abs( (int) $value ); }
 function get_option( $key, $default = '' ) { return isset( $GLOBALS['ucp_seed_options'][ $key ] ) ? $GLOBALS['ucp_seed_options'][ $key ] : $default; }
 function update_option( $key, $value ) { $GLOBALS['ucp_seed_options'][ $key ] = $value; }
 function get_post_type( $post_id ) { return isset( $GLOBALS['ucp_seed_posts'][ $post_id ] ) ? $GLOBALS['ucp_seed_posts'][ $post_id ]['post_type'] : false; }
+function get_post( $post_id ) { return isset( $GLOBALS['ucp_seed_posts'][ $post_id ] ) ? (object) array_merge( array( 'post_excerpt' => '', 'post_content' => '' ), $GLOBALS['ucp_seed_posts'][ $post_id ] ) : null; }
 function get_posts( $args ) {
 	$matches = array();
 	foreach ( $GLOBALS['ucp_seed_posts'] as $post ) {
@@ -41,10 +42,11 @@ function get_page_by_path( $slug, $output, $post_type ) {
 }
 function wp_insert_post( $data ) {
 	$id = max( array_keys( $GLOBALS['ucp_seed_posts'] ) ) + 1;
-	$GLOBALS['ucp_seed_posts'][ $id ] = array( 'ID' => $id, 'post_type' => $data['post_type'], 'post_name' => $data['post_name'] ?? strtolower( str_replace( ' ', '-', $data['post_title'] ) ), 'post_status' => $data['post_status'], 'post_title' => $data['post_title'] );
+	$GLOBALS['ucp_seed_posts'][ $id ] = array( 'ID' => $id, 'post_type' => $data['post_type'], 'post_name' => $data['post_name'] ?? strtolower( str_replace( ' ', '-', $data['post_title'] ) ), 'post_status' => $data['post_status'], 'post_title' => $data['post_title'], 'post_excerpt' => $data['post_excerpt'] ?? '', 'post_content' => $data['post_content'] ?? '' );
 	$GLOBALS['ucp_seed_insert_count']++;
 	return $id;
 }
+function wp_update_post( $data ) { $GLOBALS['ucp_seed_posts'][ $data['ID'] ] = array_merge( $GLOBALS['ucp_seed_posts'][ $data['ID'] ], $data ); return $data['ID']; }
 function is_wp_error() { return false; }
 function update_post_meta( $post_id, $key, $value ) { $GLOBALS['ucp_seed_meta'][ $post_id ][ $key ] = $value; }
 function set_post_thumbnail( $post_id, $attachment_id ) { $GLOBALS['ucp_seed_meta'][ $post_id ]['_thumbnail_id'] = $attachment_id; }
@@ -67,6 +69,11 @@ class UCP_Test_Seeder extends UrbanCareProject_Seeder {
 $seeder = new UCP_Test_Seeder();
 $seeder->seed();
 
+$pages = array_filter( $GLOBALS['ucp_seed_posts'], function ( $post ) { return 'ucp_page' === $post['post_type']; } );
+if ( 4 !== count( $pages ) ) throw new RuntimeException( 'Seeder did not create the four canonical editorial pages.' );
+foreach ( array( 'research', 'observatory', 'public-policies', 'citizen-science' ) as $slug ) {
+	if ( ! get_page_by_path( $slug, OBJECT, 'ucp_page' ) ) throw new RuntimeException( 'Missing canonical page: ' . $slug );
+}
 $stories = array_filter( $GLOBALS['ucp_seed_posts'], function ( $post ) { return 'ucp_field_story' === $post['post_type']; } );
 if ( 2 !== count( $stories ) || 7 !== count( $GLOBALS['ucp_seed_attachments'] ) ) throw new RuntimeException( 'Seeder did not create two stories and seven reusable media assets.' );
 $kitengela = get_page_by_path( 'research-in-action-across-kitengela', OBJECT, 'ucp_field_story' );

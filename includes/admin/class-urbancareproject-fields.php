@@ -10,21 +10,85 @@ class UrbanCareProject_Fields {
 
 	public function add_meta_boxes() {
 		foreach ( UrbanCareProject_Metadata::fields() as $post_type => $fields ) {
-			if ( empty( $fields ) || in_array( $post_type, array( 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
+			if ( empty( $fields ) || in_array( $post_type, array( 'ucp_page', 'ucp_gallery', 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
 				continue;
 			}
 			add_meta_box( 'ucp_structured_fields', __( 'Urban Care Details', 'urbancareproject' ), array( $this, 'render' ), $post_type, 'normal', 'high' );
 		}
 
 		add_meta_box( 'ucp_activity_details', __( 'Activity Details', 'urbancareproject' ), array( $this, 'render_activity' ), 'ucp_activity', 'normal', 'high' );
+		add_meta_box( 'ucp_page_details', __( 'Editorial Page Content', 'urbancareproject' ), array( $this, 'render_page' ), 'ucp_page', 'normal', 'high' );
+		add_meta_box( 'ucp_gallery_details', __( 'Gallery Images', 'urbancareproject' ), array( $this, 'render_gallery' ), 'ucp_gallery', 'normal', 'high' );
 		add_meta_box( 'ucp_partner_details', __( 'Partner Details', 'urbancareproject' ), array( $this, 'render_partner' ), 'ucp_partner', 'normal', 'high' );
 		add_meta_box( 'ucp_team_details', __( 'Team Member Details', 'urbancareproject' ), array( $this, 'render_team' ), 'ucp_team', 'normal', 'high' );
 		add_meta_box( 'ucp_field_story_details', __( 'Field Story Details', 'urbancareproject' ), array( $this, 'render_field_story' ), 'ucp_field_story', 'normal', 'high' );
+		remove_meta_box( 'postimagediv', 'ucp_page', 'side' );
 		remove_meta_box( 'postimagediv', 'ucp_team', 'side' );
 	}
 
 	public function render( $post ) {
 		$this->render_schema_fields( $post );
+	}
+
+	public function render_page( $post ) {
+		$fields   = UrbanCareProject_Metadata::fields()['ucp_page'];
+		$hero_id  = get_post_thumbnail_id( $post );
+		$hero_alt = $hero_id ? trim( get_post_meta( $hero_id, '_wp_attachment_image_alt', true ) ) : '';
+		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
+		?>
+		<div class="ucp-field-story-editor">
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Hero image', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Choose the lead image shown behind the page title. Add meaningful alternative text in the Media Library.', 'urbancareproject' ); ?></p>
+				<?php $this->render_field( '_ucp_hero_eyebrow', $fields['_ucp_hero_eyebrow'], get_post_meta( $post->ID, '_ucp_hero_eyebrow', true ) ); ?>
+				<?php $this->render_media_field( '_ucp_page_hero_id', __( 'Hero image', 'urbancareproject' ), $hero_id, __( 'Choose hero image', 'urbancareproject' ) ); ?>
+				<?php if ( $hero_id ) : ?>
+					<p class="ucp-image-status <?php echo $hero_alt ? 'ucp-image-status--ready' : 'ucp-image-status--warning'; ?>">
+						<?php echo $hero_alt ? esc_html( sprintf( __( 'Alternative text: %s', 'urbancareproject' ), $hero_alt ) ) : esc_html__( 'Alternative text is missing. Edit this image in the Media Library before publishing.', 'urbancareproject' ); ?>
+					</p>
+				<?php endif; ?>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Direct page gallery', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Choose images used only on this page and arrange them in display order.', 'urbancareproject' ); ?></p>
+				<?php $this->render_field( '_ucp_gallery_ids', $fields['_ucp_gallery_ids'], get_post_meta( $post->ID, '_ucp_gallery_ids', true ) ); ?>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Reusable galleries', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Select published gallery records to display before the direct page gallery.', 'urbancareproject' ); ?></p>
+				<?php $this->render_field( '_ucp_related_gallery_ids', $fields['_ucp_related_gallery_ids'], get_post_meta( $post->ID, '_ucp_related_gallery_ids', true ) ); ?>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Page navigation and search', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'These fields describe existing content; they do not change the page layout.', 'urbancareproject' ); ?></p>
+				<?php foreach ( array( '_ucp_section_summaries', '_ucp_seo_title', '_ucp_seo_description' ) as $key ) : ?>
+					<?php $this->render_field( $key, $fields[ $key ], get_post_meta( $post->ID, $key, true ) ); ?>
+				<?php endforeach; ?>
+			</section>
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Related content', 'urbancareproject' ); ?></h3>
+				<div class="ucp-field-story-grid">
+					<?php foreach ( array( '_ucp_related_activity_ids', '_ucp_related_team_ids', '_ucp_related_partner_ids', '_ucp_related_site_ids', '_ucp_related_story_ids' ) as $key ) : ?>
+						<?php $this->render_field( $key, $fields[ $key ], get_post_meta( $post->ID, $key, true ) ); ?>
+					<?php endforeach; ?>
+				</div>
+			</section>
+		</div>
+		<?php
+	}
+
+	public function render_gallery( $post ) {
+		$fields = UrbanCareProject_Metadata::fields()['ucp_gallery'];
+		wp_nonce_field( self::NONCE_ACTION, self::NONCE_NAME );
+		?>
+		<div class="ucp-field-story-editor">
+			<section class="ucp-field-story-section">
+				<h3><?php esc_html_e( 'Reusable gallery', 'urbancareproject' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Choose and order images. Use the main editor for an optional gallery description.', 'urbancareproject' ); ?></p>
+				<?php $this->render_field( '_ucp_gallery_ids', $fields['_ucp_gallery_ids'], get_post_meta( $post->ID, '_ucp_gallery_ids', true ) ); ?>
+			</section>
+		</div>
+		<?php
 	}
 
 	public function render_activity( $post ) {
@@ -148,6 +212,14 @@ class UrbanCareProject_Fields {
 				delete_post_thumbnail( $post_id );
 			}
 		}
+		if ( 'ucp_page' === $post->post_type ) {
+			$hero_id = isset( $_POST['_ucp_page_hero_id'] ) ? absint( wp_unslash( $_POST['_ucp_page_hero_id'] ) ) : 0;
+			if ( $hero_id && wp_attachment_is_image( $hero_id ) ) {
+				set_post_thumbnail( $post_id, $hero_id );
+			} else {
+				delete_post_thumbnail( $post_id );
+			}
+		}
 
 		foreach ( $schemas[ $post->post_type ] as $key => $field ) {
 			if ( ! empty( $field['legacy'] ) && ! isset( $_POST[ $key ] ) ) {
@@ -168,12 +240,12 @@ class UrbanCareProject_Fields {
 
 	public function enqueue_assets( $hook ) {
 		$screen = get_current_screen();
-		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || ! in_array( $screen->post_type, array( 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
+		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || ! in_array( $screen->post_type, array( 'ucp_page', 'ucp_gallery', 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
 			return;
 		}
 
 		wp_enqueue_media();
-		$asset = str_replace( 'ucp_', '', $screen->post_type );
+		$asset = in_array( $screen->post_type, array( 'ucp_page', 'ucp_gallery' ), true ) ? 'field_story' : str_replace( 'ucp_', '', $screen->post_type );
 		wp_enqueue_script(
 			'urbancareproject-' . $asset . '-fields',
 			URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-' . $asset . '-fields.js',
@@ -207,6 +279,9 @@ class UrbanCareProject_Fields {
 	}
 
 	public function title_placeholder( $placeholder, $post ) {
+		if ( 'ucp_gallery' === $post->post_type ) {
+			return __( 'Gallery name', 'urbancareproject' );
+		}
 		if ( 'ucp_partner' === $post->post_type ) {
 			return __( 'Partner name', 'urbancareproject' );
 		}
@@ -220,6 +295,23 @@ class UrbanCareProject_Fields {
 			return __( 'Field story title', 'urbancareproject' );
 		}
 		return 'ucp_team' === $post->post_type ? __( 'Team member name', 'urbancareproject' ) : $placeholder;
+	}
+
+	public function attachment_fields_to_edit( $form_fields, $post ) {
+		$form_fields['ucp_image_credit'] = array(
+			'label' => __( 'Image credit', 'urbancareproject' ),
+			'input' => 'text',
+			'value' => get_post_meta( $post->ID, '_ucp_image_credit', true ),
+			'helps' => __( 'Photographer, artist, or source credited on the public site.', 'urbancareproject' ),
+		);
+		return $form_fields;
+	}
+
+	public function attachment_fields_to_save( $post, $attachment ) {
+		if ( isset( $attachment['ucp_image_credit'] ) ) {
+			update_post_meta( $post['ID'], '_ucp_image_credit', sanitize_text_field( $attachment['ucp_image_credit'] ) );
+		}
+		return $post;
 	}
 
 	public function create_study_site() {
@@ -310,13 +402,16 @@ class UrbanCareProject_Fields {
 				<?php $this->render_story_lenses_field( $key, (array) $value ); ?>
 			<?php elseif ( 'gallery' === $field['input'] ) : ?>
 				<?php $this->render_gallery_field( $key, (array) $value ); ?>
-			<?php elseif ( in_array( $field['input'], array( 'team_select', 'partner_multi_select', 'study_site_select', 'activity_select' ), true ) ) : ?>
+			<?php elseif ( 'gallery_select' === $field['input'] ) : ?>
+				<?php $this->render_gallery_relation_field( $key, (array) $value ); ?>
+			<?php elseif ( in_array( $field['input'], array( 'team_select', 'partner_multi_select', 'study_site_select', 'activity_select', 'field_story_select' ), true ) ) : ?>
 				<?php
 				$post_types = array(
 					'team_select'          => 'ucp_team',
 					'partner_multi_select' => 'ucp_partner',
 					'study_site_select'    => 'ucp_study_site',
 					'activity_select'      => 'ucp_activity',
+					'field_story_select'   => 'ucp_field_story',
 				);
 				$this->render_relation_field( $key, $post_types[ $field['input'] ], (array) $value );
 				?>
@@ -436,6 +531,37 @@ class UrbanCareProject_Fields {
 				<?php endforeach; ?>
 			</div>
 			<button type="button" class="button button-secondary" data-ucp-gallery-add><?php esc_html_e( 'Choose gallery images', 'urbancareproject' ); ?></button>
+		</div>
+		<?php
+	}
+
+	private function render_gallery_relation_field( $key, $gallery_ids ) {
+		$galleries = get_posts( array( 'post_type' => 'ucp_gallery', 'post_status' => 'publish', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$by_id     = array();
+		foreach ( $galleries as $gallery ) {
+			$by_id[ (int) $gallery->ID ] = $gallery;
+		}
+		$gallery_ids = array_values( array_filter( array_map( 'absint', $gallery_ids ), function ( $gallery_id ) use ( $by_id ) { return isset( $by_id[ $gallery_id ] ); } ) );
+		?>
+		<div class="ucp-gallery-relations" data-ucp-gallery-relations>
+			<input type="hidden" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( implode( ',', $gallery_ids ) ); ?>" data-ucp-gallery-relation-ids />
+			<div class="ucp-gallery-relations__picker">
+				<select data-ucp-gallery-relation-picker>
+					<option value=""><?php esc_html_e( 'Select a published gallery', 'urbancareproject' ); ?></option>
+					<?php foreach ( $galleries as $gallery ) : ?>
+						<option value="<?php echo esc_attr( $gallery->ID ); ?>" data-title="<?php echo esc_attr( get_the_title( $gallery ) ); ?>"><?php echo esc_html( get_the_title( $gallery ) ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<button type="button" class="button" data-ucp-gallery-relation-add><?php esc_html_e( 'Add gallery', 'urbancareproject' ); ?></button>
+			</div>
+			<div class="ucp-gallery-relations__list" data-ucp-gallery-relation-list>
+				<?php foreach ( $gallery_ids as $gallery_id ) : ?>
+					<div class="ucp-gallery-relation" data-ucp-gallery-relation data-id="<?php echo esc_attr( $gallery_id ); ?>">
+						<strong><?php echo esc_html( get_the_title( $by_id[ $gallery_id ] ) ); ?></strong>
+						<div><button type="button" class="button-link" data-ucp-gallery-relation-up><?php esc_html_e( 'Earlier', 'urbancareproject' ); ?></button><button type="button" class="button-link" data-ucp-gallery-relation-down><?php esc_html_e( 'Later', 'urbancareproject' ); ?></button><button type="button" class="button-link-delete" data-ucp-gallery-relation-remove><?php esc_html_e( 'Remove', 'urbancareproject' ); ?></button></div>
+					</div>
+				<?php endforeach; ?>
+			</div>
 		</div>
 		<?php
 	}

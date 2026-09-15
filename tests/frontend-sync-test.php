@@ -81,4 +81,14 @@ assert_call_count( 2, 'Unpublish did not trigger revalidation.' );
 $sync->content_status_changed( 'pending', 'draft', new WP_Post( 'pending' ) );
 assert_call_count( 2, 'A non-public transition triggered revalidation.' );
 
+$gallery = new WP_Post( 'publish' );
+$gallery->post_type = 'ucp_gallery';
+$gallery->post_name = 'fieldwork-gallery';
+$sync->content_saved( 8, $gallery );
+assert_call_count( 3, 'Published reusable Gallery save did not trigger revalidation.' );
+$gallery_body = json_decode( $GLOBALS['ucp_calls'][2][1]['body'], true );
+if ( 'gallery' !== $gallery_body['type'] || 'fieldwork-gallery' !== $gallery_body['slug'] ) {
+	throw new RuntimeException( 'Reusable Gallery revalidation payload mismatch.' );
+}
+
 echo "WordPress frontend sync contract passed\n";

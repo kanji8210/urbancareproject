@@ -55,6 +55,22 @@ class UrbanCareProject_Metadata {
 
 	public static function fields() {
 		return array(
+			'ucp_page'        => array(
+				'_ucp_hero_eyebrow'         => self::field( 'Hero eyebrow' ),
+				'_ucp_gallery_ids'          => self::typed_id_array_field( 'Gallery', 'gallery', 'sanitize_image_id_array' ),
+				'_ucp_related_gallery_ids'  => self::typed_id_array_field( 'Reusable galleries', 'gallery_select', 'sanitize_gallery_id_array' ),
+				'_ucp_section_summaries'    => self::array_field( 'Section summaries', 'One summary per line.' ),
+				'_ucp_related_activity_ids' => self::typed_id_array_field( 'Activities', 'activity_select', 'sanitize_activity_id_array' ),
+				'_ucp_related_team_ids'     => self::typed_id_array_field( 'Team members', 'team_select', 'sanitize_team_id_array' ),
+				'_ucp_related_partner_ids'  => self::typed_id_array_field( 'Partners', 'partner_multi_select', 'sanitize_partner_id_array' ),
+				'_ucp_related_site_ids'     => self::typed_id_array_field( 'Study sites', 'study_site_select', 'sanitize_study_site_id_array' ),
+				'_ucp_related_story_ids'    => self::typed_id_array_field( 'Field stories', 'field_story_select', 'sanitize_field_story_id_array' ),
+				'_ucp_seo_title'            => self::field( 'SEO title' ),
+				'_ucp_seo_description'      => self::field( 'SEO description', 'textarea' ),
+			),
+			'ucp_gallery'     => array(
+				'_ucp_gallery_ids' => self::typed_id_array_field( 'Gallery images', 'gallery', 'sanitize_image_id_array' ),
+			),
 			'ucp_project'     => array(
 				'_ucp_funding_statement'   => self::field( 'Funding statement', 'textarea' ),
 				'_ucp_objectives'          => self::array_field( 'Objectives', 'One objective per line.' ),
@@ -438,6 +454,14 @@ class UrbanCareProject_Metadata {
 
 	public static function sanitize_activity_id_array( $value ) {
 		return self::sanitize_post_type_id_array( $value, 'ucp_activity' );
+	}
+
+	public static function sanitize_field_story_id_array( $value ) {
+		return self::sanitize_post_type_id_array( $value, 'ucp_field_story' );
+	}
+
+	public static function sanitize_gallery_id_array( $value ) {
+		return self::sanitize_post_type_id_array( $value, 'ucp_gallery' );
 	}
 
 	public static function sanitize_publication_type( $value ) {

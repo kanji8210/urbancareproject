@@ -102,3 +102,50 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+.ucp-media-preview img {
+	display: block;
+	max-width: 360px;
+	max-height: 220px;
+	margin: 10px 0;
+	object-fit: contain;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+}
+
+.ucp-gallery-relations__picker,
+.ucp-gallery-relation,
+.ucp-gallery-relation > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.ucp-gallery-relations__picker {
+	margin-bottom: 12px;
+}
+
+.ucp-gallery-relation {
+	justify-content: space-between;
+	padding: 10px 12px;
+	border: 1px solid #dcdcde;
+	background: #f6f7f7;
+}
+
+.ucp-gallery-relation + .ucp-gallery-relation {
+	border-top: 0;
+}
+
+.ucp-image-status {
+	max-width: 560px;
+	margin: 12px 0 0;
+	padding: 9px 12px;
+	border-left: 4px solid #2271b1;
+	background: #f0f6fc;
+}
+
+.ucp-image-status--warning {
+	border-left-color: #dba617;
+	background: #fcf9e8;
+}
