@@ -1,13 +1,21 @@
 (function ($) {
 	'use strict';
 
+	function labelMediaFrame(frame, title) {
+		frame.on('open', function () {
+			frame.modal.$el.attr('aria-label', title);
+		});
+	}
+
 	function openGalleryFrame(onSelect) {
+		const title = 'Choose gallery images';
 		const frame = wp.media({
-			title: 'Choose gallery images',
+			title: title,
 			button: { text: 'Add images' },
 			library: { type: 'image' },
 			multiple: true
 		});
+		labelMediaFrame(frame, title);
 		frame.on('select', function () {
 			onSelect(frame.state().get('selection').toJSON());
 		});
@@ -25,12 +33,14 @@
 		const remove = field.find('[data-ucp-media-remove]');
 
 		field.find('[data-ucp-media-select]').on('click', function () {
+			const title = field.data('ucp-media-title') || 'Choose image';
 			const frame = wp.media({
-				title: field.data('ucp-media-title') || 'Choose image',
+				title: title,
 				button: { text: 'Use this image' },
 				library: { type: 'image' },
 				multiple: false
 			});
+			labelMediaFrame(frame, title);
 			frame.on('select', function () {
 				const attachment = frame.state().get('selection').first().toJSON();
 				input.val(attachment.id);
