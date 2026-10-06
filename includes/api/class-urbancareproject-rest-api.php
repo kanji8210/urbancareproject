@@ -54,6 +54,16 @@ class UrbanCareProject_REST_API extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
+			'/settings/map',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_map_settings' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/project',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -129,6 +139,18 @@ class UrbanCareProject_REST_API extends WP_REST_Controller {
 			return new WP_Error( 'ucp_content_not_found', __( 'Published content was not found.', 'urbancareproject' ), array( 'status' => 404 ) );
 		}
 		return rest_ensure_response( $this->serializer->serialize( $post ) );
+	}
+
+	public function get_map_settings() {
+		$key = get_option( 'ucp_google_maps_api_key', '' );
+		$key = is_string( $key ) ? trim( $key ) : '';
+
+		return rest_ensure_response(
+			array(
+				'provider'        => '' === $key ? 'default' : 'google',
+				'googleMapsApiKey' => $key,
+			)
+		);
 	}
 
 	public function get_project() {

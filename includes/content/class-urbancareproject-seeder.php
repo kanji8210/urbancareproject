@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class UrbanCareProject_Seeder {
 	const PROJECT_ID_OPTION = 'ucp_canonical_project_id';
 	const SEED_VERSION_OPTION = 'ucp_content_seed_version';
-	const SEED_VERSION = '3';
+	const SEED_VERSION = '4';
 
 	public function seed() {
 		$this->seed_terms();
@@ -133,6 +133,11 @@ class UrbanCareProject_Seeder {
 		$project_id = self::canonical_project_id();
 		$project    = $project_id ? get_post( $project_id ) : null;
 		$pages      = array(
+			'home' => array(
+				'title'   => 'Home',
+				'excerpt' => 'Homepage hero slideshow. Add the slideshow images to the Gallery below, in the order they should appear.',
+				'content' => '<p>The images in this page\'s Gallery are shown, in order, as the homepage hero slideshow.</p>',
+			),
 			'research' => array(
 				'title'   => 'Research',
 				'excerpt' => $project && $project->post_excerpt ? $project->post_excerpt : 'How Urban Care studies land, environment, health, and everyday life across a rapidly changing Kitengela.',

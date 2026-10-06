@@ -45,6 +45,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</td>
 			</tr>
 		</table>
+		<h2><?php esc_html_e( 'Map', 'urbancareproject' ); ?></h2>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="ucp_google_maps_api_key"><?php esc_html_e( 'Google Maps API key', 'urbancareproject' ); ?></label></th>
+				<td>
+					<input id="ucp_google_maps_api_key" class="regular-text" type="text" name="ucp_google_maps_api_key" value="<?php echo esc_attr( get_option( 'ucp_google_maps_api_key', '' ) ); ?>" autocomplete="off" spellcheck="false" />
+					<p class="description"><?php esc_html_e( 'Enables Google satellite imagery on the website map. Leave empty to use the default OpenStreetMap basemap. Enable the "Map Tiles API" for this key in Google Cloud.', 'urbancareproject' ); ?></p>
+					<p class="description"><?php esc_html_e( 'This key is used in visitors\' browsers, so it is publicly visible. In Google Cloud, restrict it to the website domains (HTTP referrers) and to the Map Tiles API only.', 'urbancareproject' ); ?></p>
+				</td>
+			</tr>
+		</table>
 		<?php submit_button(); ?>
 	</form>
 	<hr />

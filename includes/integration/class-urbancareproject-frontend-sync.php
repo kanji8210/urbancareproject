@@ -39,6 +39,10 @@ class UrbanCareProject_Frontend_Sync {
 		$this->request_revalidation( substr( $post->post_type, 4 ), $post->post_name, false );
 	}
 
+	public function map_settings_saved() {
+		$this->request_revalidation( 'settings', '', false );
+	}
+
 	public function test_revalidation() {
 		$this->authorize_admin_action( 'ucp_test_revalidation' );
 		$result = $this->request_revalidation( 'project', '', true );

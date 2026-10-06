@@ -77,6 +77,23 @@ class UrbanCareProject_Admin {
 			'ucp_vercel_deploy_webhook',
 			array( 'sanitize_callback' => array( $this, 'sanitize_webhook_url' ) )
 		);
+		register_setting(
+			'urbancareproject_options_group',
+			'ucp_google_maps_api_key',
+			array( 'sanitize_callback' => array( $this, 'sanitize_map_api_key' ) )
+		);
+	}
+
+	public function sanitize_map_api_key( $value ) {
+		$value = trim( sanitize_text_field( $value ) );
+		if ( '' === $value ) {
+			return '';
+		}
+		if ( ! preg_match( '/^[A-Za-z0-9_\-]{20,100}$/', $value ) ) {
+			add_settings_error( 'ucp_google_maps_api_key', 'ucp_google_maps_api_key_invalid', __( 'The Google Maps API key looks invalid and was not saved.', 'urbancareproject' ) );
+			return get_option( 'ucp_google_maps_api_key', '' );
+		}
+		return $value;
 	}
 
 	public function sanitize_frontend_url( $value ) {

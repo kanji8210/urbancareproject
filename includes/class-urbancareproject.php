@@ -58,6 +58,8 @@ class UrbanCareProject {
 		$this->loader->add_action( 'save_post', $frontend_sync, 'content_saved', 20, 2 );
 		$this->loader->add_action( 'admin_post_ucp_test_revalidation', $frontend_sync, 'test_revalidation' );
 		$this->loader->add_action( 'admin_post_ucp_trigger_deploy', $frontend_sync, 'trigger_deploy' );
+		$this->loader->add_action( 'add_option_ucp_google_maps_api_key', $frontend_sync, 'map_settings_saved' );
+		$this->loader->add_action( 'update_option_ucp_google_maps_api_key', $frontend_sync, 'map_settings_saved' );
 	}
 
 	private function define_api_hooks() {

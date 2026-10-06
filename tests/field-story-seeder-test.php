@@ -70,8 +70,8 @@ $seeder = new UCP_Test_Seeder();
 $seeder->seed();
 
 $pages = array_filter( $GLOBALS['ucp_seed_posts'], function ( $post ) { return 'ucp_page' === $post['post_type']; } );
-if ( 4 !== count( $pages ) ) throw new RuntimeException( 'Seeder did not create the four canonical editorial pages.' );
-foreach ( array( 'research', 'observatory', 'public-policies', 'citizen-science' ) as $slug ) {
+if ( 5 !== count( $pages ) ) throw new RuntimeException( 'Seeder did not create the five canonical editorial pages.' );
+foreach ( array( 'home', 'research', 'observatory', 'public-policies', 'citizen-science' ) as $slug ) {
 	if ( ! get_page_by_path( $slug, OBJECT, 'ucp_page' ) ) throw new RuntimeException( 'Missing canonical page: ' . $slug );
 }
 $stories = array_filter( $GLOBALS['ucp_seed_posts'], function ( $post ) { return 'ucp_field_story' === $post['post_type']; } );
