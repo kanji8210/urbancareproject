@@ -55,7 +55,11 @@ class UrbanCareProject_Fields {
 			</section>
 			<section class="ucp-field-story-section">
 				<h3><?php esc_html_e( 'Reusable galleries', 'urbancareproject' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Select published gallery records to display before the direct page gallery.', 'urbancareproject' ); ?></p>
+				<?php if ( isset( $post->post_name ) && 'home' === $post->post_name ) : ?>
+					<p class="description"><?php esc_html_e( 'Selected published galleries supply the homepage hero slideshow in gallery and image order. If none are selected, the featured image and direct page gallery are used.', 'urbancareproject' ); ?></p>
+				<?php else : ?>
+					<p class="description"><?php esc_html_e( 'Select published gallery records to display before the direct page gallery.', 'urbancareproject' ); ?></p>
+				<?php endif; ?>
 				<?php $this->render_field( '_ucp_related_gallery_ids', $fields['_ucp_related_gallery_ids'], get_post_meta( $post->ID, '_ucp_related_gallery_ids', true ) ); ?>
 			</section>
 			<section class="ucp-field-story-section">
