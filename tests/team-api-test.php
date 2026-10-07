@@ -73,6 +73,7 @@ $GLOBALS['ucp_test_meta'] = array(
 		'_ucp_longitude'            => 36.9586,
 		'_ucp_coordinates_verified' => true,
 		'_ucp_gallery_ids'          => array(),
+		'_ucp_related_gallery_ids'  => array( 14 ),
 		'_ucp_related_activity_ids' => array(),
 	),
 	9 => array(
@@ -84,6 +85,7 @@ $GLOBALS['ucp_test_meta'] = array(
 			array( 'title' => 'Resident meetings', 'startDate' => '2025-09-01', 'endDate' => '', 'ongoing' => true, 'summary' => 'Protocol discussions', 'imageId' => 51 ),
 		),
 		'_ucp_gallery_ids'         => array( 51 ),
+		'_ucp_related_gallery_ids' => array( 14 ),
 		'_ucp_related_team_ids'    => array( 7, 11 ),
 		'_ucp_related_partner_ids' => array( 10 ),
 		'_ucp_related_site_ids'    => array( 8 ),
@@ -93,6 +95,7 @@ $GLOBALS['ucp_test_meta'] = array(
 	),
 	12 => array(
 		'_ucp_gallery_ids'          => array( 51 ),
+		'_ucp_related_gallery_ids'  => array( 14 ),
 		'_ucp_story_lenses'         => array( array( 'title' => 'Working with residents', 'description' => 'Shared fieldwork.' ) ),
 		'_ucp_creator_credit'       => 'Text source: Bérénice Bon',
 		'_ucp_closing_statement'    => 'Shared fieldwork connects environmental change with everyday life.',
@@ -199,6 +202,9 @@ $study_site = $serializer->serialize( 8 );
 if ( 'Noonkopir, Kitengela, Kajiado County' !== $study_site['meta']['locationName'] || -1.4692 !== $study_site['meta']['latitude'] || 36.9586 !== $study_site['meta']['longitude'] ) {
 	throw new RuntimeException( 'Study Site location or verified coordinates were not serialized correctly.' );
 }
+if ( 14 !== $study_site['meta']['galleries'][0]['id'] ) {
+	throw new RuntimeException( 'Study Site reusable galleries were not serialized.' );
+}
 
 $GLOBALS['ucp_test_meta'][8]['_ucp_coordinates_verified'] = false;
 $unverified_study_site = $serializer->serialize( 8 );
@@ -216,10 +222,16 @@ if ( 1 !== count( $activity['meta']['relatedTeamIds'] ) || 7 !== $activity['meta
 if ( 51 !== $activity['meta']['gallery'][0]['id'] || 10 !== $activity['meta']['relatedPartnerIds'][0]['id'] || 8 !== $activity['meta']['relatedSiteIds'][0]['id'] ) {
 	throw new RuntimeException( 'Activity gallery, Partner, or Study Site relations were not serialized correctly.' );
 }
+if ( 14 !== $activity['meta']['galleries'][0]['id'] || 51 !== $activity['meta']['galleries'][0]['images'][0]['id'] ) {
+	throw new RuntimeException( 'Activity reusable galleries were not expanded.' );
+}
 
 $field_story = $serializer->serialize( 12 );
 if ( 'Working with residents' !== $field_story['meta']['storyLenses'][0]['title'] || 51 !== $field_story['meta']['gallery'][0]['id'] ) {
 	throw new RuntimeException( 'Field Story lenses or gallery were not serialized correctly.' );
+}
+if ( 14 !== $field_story['meta']['galleries'][0]['id'] || 51 !== $field_story['meta']['galleries'][0]['images'][0]['id'] ) {
+	throw new RuntimeException( 'Field Story reusable galleries were not expanded.' );
 }
 if ( 8 !== $field_story['meta']['relatedSiteIds'][0]['id'] || 7 !== $field_story['meta']['relatedTeamIds'][0]['id'] || 9 !== $field_story['meta']['relatedActivityIds'][0]['id'] ) {
 	throw new RuntimeException( 'Field Story relations were not serialized correctly.' );

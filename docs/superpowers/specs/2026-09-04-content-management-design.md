@@ -58,6 +58,7 @@ Structured fields:
 - Activity date
 - Location label
 - Gallery attachment IDs
+- Ordered reusable Gallery records, selected by title in the editor
 - Related Study Site IDs
 - Related Partner IDs
 
@@ -152,6 +153,7 @@ Structured fields:
 - Longitude
 - Coordinate verification flag
 - Gallery attachment IDs
+- Ordered reusable Gallery records, selected by title in the editor
 - Related Activity IDs
 
 Coordinates may be stored while research is in progress, but the public API returns them only when the verification flag is true and both values pass range validation.
@@ -172,6 +174,7 @@ Native fields:
 Structured fields:
 
 - Gallery attachment IDs
+- Ordered reusable Gallery records, selected by title in the editor
 - Photographer or creator credit
 - Closing statement
 - Related Study Site IDs

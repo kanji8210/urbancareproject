@@ -38,6 +38,7 @@ function get_post_type( $post_id ) {
 		41 => 'ucp_study_site',
 		51 => 'attachment',
 		52 => 'attachment',
+		53 => 'ucp_gallery',
 	);
 	return isset( $types[ (int) $post_id ] ) ? $types[ (int) $post_id ] : false;
 }
@@ -56,6 +57,7 @@ $expected_fields = array(
 	'_ucp_location',
 	'_ucp_activity_phases',
 	'_ucp_gallery_ids',
+	'_ucp_related_gallery_ids',
 	'_ucp_related_team_ids',
 	'_ucp_related_partner_ids',
 	'_ucp_related_site_ids',
@@ -69,6 +71,9 @@ foreach ( $expected_fields as $key ) {
 }
 if ( empty( $fields['_ucp_activity_date']['legacy'] ) ) {
 	throw new RuntimeException( 'The original Activity date is not retained as a legacy field.' );
+}
+if ( 'gallery_select' !== $fields['_ucp_related_gallery_ids']['input'] ) {
+	throw new RuntimeException( 'Reusable Activity galleries are not selected from the Gallery list.' );
 }
 
 $phases = UrbanCareProject_Metadata::sanitize_activity_phases(
@@ -105,6 +110,9 @@ if ( '' !== $phases[1]['endDate'] || 0 !== $phases[1]['imageId'] || true !== $ph
 
 if ( array( 51, 52 ) !== UrbanCareProject_Metadata::sanitize_image_id_array( array( '51', '52', '51', '999' ) ) ) {
 	throw new RuntimeException( 'Activity gallery image IDs were not validated and deduplicated.' );
+}
+if ( array( 53 ) !== UrbanCareProject_Metadata::sanitize_gallery_id_array( array( '53', '53', '51' ) ) ) {
+	throw new RuntimeException( 'Reusable Activity galleries were not restricted to Gallery records.' );
 }
 if ( array( 21, 22 ) !== UrbanCareProject_Metadata::sanitize_team_id_array( array( 21, 31, 22 ) ) ) {
 	throw new RuntimeException( 'Related Team IDs were not restricted to Team Member posts.' );

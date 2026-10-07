@@ -49,12 +49,12 @@ function absint( $value ) {
 }
 
 function get_post_type( $post_id ) {
-	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 41 => 'ucp_study_site', 42 => 'ucp_activity', 51 => 'ucp_gallery' );
+	$types = array( 8 => 'ucp_publication', 12 => 'ucp_publication', 17 => 'ucp_partner', 21 => 'ucp_team', 31 => 'attachment', 32 => 'attachment', 41 => 'ucp_study_site', 42 => 'ucp_activity', 51 => 'ucp_gallery' );
 	return isset( $types[ (int) $post_id ] ) ? $types[ (int) $post_id ] : false;
 }
 
 function wp_attachment_is_image( $post_id ) {
-	return 31 === (int) $post_id;
+	return in_array( (int) $post_id, array( 31, 32 ), true );
 }
 
 function wp_unslash( $value ) {
@@ -101,6 +101,13 @@ if ( 'study_site_location_select' !== $activity_fields['_ucp_location']['input']
 }
 if ( ! method_exists( 'UrbanCareProject_Fields', 'create_study_site' ) ) {
 	throw new RuntimeException( 'Activity editor does not expose the Study Site quick-create handler.' );
+}
+$study_site_fields = UrbanCareProject_Metadata::fields()['ucp_study_site'];
+if ( 'gallery' !== $study_site_fields['_ucp_gallery_ids']['input'] || 'gallery_select' !== $study_site_fields['_ucp_related_gallery_ids']['input'] ) {
+	throw new RuntimeException( 'Study Site galleries do not use image and reusable Gallery selectors.' );
+}
+if ( 'gallery_select' !== UrbanCareProject_Metadata::fields()['ucp_field_story']['_ucp_related_gallery_ids']['input'] ) {
+	throw new RuntimeException( 'Field Story reusable galleries are not selected from the Gallery list.' );
 }
 
 $publications = UrbanCareProject_Metadata::sanitize_publications(
@@ -187,6 +194,7 @@ $_POST = array(
 	'_ucp_location'                     => 'Kitengela',
 	'_ucp_activity_phases'              => array(),
 	'_ucp_gallery_ids'                  => '31, 99',
+	'_ucp_related_gallery_ids'          => '51',
 	'_ucp_related_team_ids'             => array( 21, 17 ),
 	'_ucp_related_partner_ids'          => array( 17, 21 ),
 	'_ucp_related_site_ids'             => array( 41, 17 ),
@@ -199,6 +207,9 @@ if ( '' !== $GLOBALS['ucp_test_meta']['_ucp_end_date'] ) {
 }
 if ( array( 31 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 21 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_team_ids'] ) {
 	throw new RuntimeException( 'Activity gallery or Team relationships were not validated by type.' );
+}
+if ( array( 51 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_gallery_ids'] ) {
+	throw new RuntimeException( 'Activity reusable galleries were not validated by type.' );
 }
 if ( array( 17 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_partner_ids'] || array( 41 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_site_ids'] ) {
 	throw new RuntimeException( 'Activity Partner or Study Site relationships were not validated by type.' );
@@ -275,6 +286,7 @@ $expected_study_site_fields = array(
 	'_ucp_longitude',
 	'_ucp_coordinates_verified',
 	'_ucp_gallery_ids',
+	'_ucp_related_gallery_ids',
 	'_ucp_related_activity_ids',
 );
 foreach ( $expected_study_site_fields as $key ) {
@@ -297,6 +309,7 @@ $_POST = array(
 	'_ucp_longitude'                    => '36.9586',
 	'_ucp_coordinates_verified'         => '1',
 	'_ucp_gallery_ids'                  => '31, 32, 31',
+	'_ucp_related_gallery_ids'          => '51',
 	'_ucp_related_activity_ids'         => '41, 42',
 );
 $fields->save( 11, $study_site_post );
@@ -307,13 +320,14 @@ if ( 'Noonkopir, Kitengela, Kajiado County' !== $GLOBALS['ucp_test_meta']['_ucp_
 if ( -1.4692 !== $GLOBALS['ucp_test_meta']['_ucp_latitude'] || 36.9586 !== $GLOBALS['ucp_test_meta']['_ucp_longitude'] || true !== $GLOBALS['ucp_test_meta']['_ucp_coordinates_verified'] ) {
 	throw new RuntimeException( 'Study Site verified coordinates were not saved correctly.' );
 }
-if ( array( 31, 32 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 41, 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
+if ( array( 31, 32 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 51 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_gallery_ids'] || array( 41, 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
 	throw new RuntimeException( 'Study Site gallery or related activities were not retained.' );
 }
 
 $field_story_fields = UrbanCareProject_Metadata::fields()['ucp_field_story'];
 $expected_field_story_fields = array(
 	'_ucp_gallery_ids',
+	'_ucp_related_gallery_ids',
 	'_ucp_story_lenses',
 	'_ucp_creator_credit',
 	'_ucp_closing_statement',

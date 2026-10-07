@@ -112,8 +112,9 @@ class UrbanCareProject_Fields {
 			</section>
 			<section class="ucp-activity-section">
 				<h3><?php esc_html_e( 'Media gallery', 'urbancareproject' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Choose supporting images and arrange them in display order.', 'urbancareproject' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Choose supporting images and reusable galleries, then arrange them in display order.', 'urbancareproject' ); ?></p>
 				<?php $this->render_field( '_ucp_gallery_ids', $fields['_ucp_gallery_ids'], get_post_meta( $post->ID, '_ucp_gallery_ids', true ) ); ?>
+				<?php $this->render_field( '_ucp_related_gallery_ids', $fields['_ucp_related_gallery_ids'], get_post_meta( $post->ID, '_ucp_related_gallery_ids', true ) ); ?>
 			</section>
 			<section class="ucp-activity-section">
 				<h3><?php esc_html_e( 'People and places', 'urbancareproject' ); ?></h3>
@@ -154,8 +155,9 @@ class UrbanCareProject_Fields {
 			</section>
 			<section class="ucp-field-story-section">
 				<h3><?php esc_html_e( 'Visual narrative', 'urbancareproject' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Use the Featured image panel for the lead image, then arrange supporting images here.', 'urbancareproject' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Use the Featured image panel for the lead image, then arrange supporting images and reusable galleries here.', 'urbancareproject' ); ?></p>
 				<?php $this->render_field( '_ucp_gallery_ids', $fields['_ucp_gallery_ids'], get_post_meta( $post->ID, '_ucp_gallery_ids', true ) ); ?>
+				<?php $this->render_field( '_ucp_related_gallery_ids', $fields['_ucp_related_gallery_ids'], get_post_meta( $post->ID, '_ucp_related_gallery_ids', true ) ); ?>
 			</section>
 			<section class="ucp-field-story-section">
 				<h3><?php esc_html_e( 'Research lenses', 'urbancareproject' ); ?></h3>
@@ -240,19 +242,39 @@ class UrbanCareProject_Fields {
 
 	public function enqueue_assets( $hook ) {
 		$screen = get_current_screen();
-		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || ! in_array( $screen->post_type, array( 'ucp_page', 'ucp_gallery', 'ucp_activity', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
+		if ( ! $screen || ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || ! in_array( $screen->post_type, array( 'ucp_page', 'ucp_gallery', 'ucp_activity', 'ucp_study_site', 'ucp_partner', 'ucp_team', 'ucp_field_story' ), true ) ) {
 			return;
 		}
 
 		wp_enqueue_media();
-		$asset = in_array( $screen->post_type, array( 'ucp_page', 'ucp_gallery' ), true ) ? 'field_story' : str_replace( 'ucp_', '', $screen->post_type );
-		wp_enqueue_script(
-			'urbancareproject-' . $asset . '-fields',
-			URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-' . $asset . '-fields.js',
-			array( 'jquery' ),
-			URBANCAREPROJECT_VERSION,
-			true
+		$assets = array(
+			'ucp_page'        => 'field_story',
+			'ucp_gallery'     => 'field_story',
+			'ucp_activity'    => 'activity',
+			'ucp_study_site'  => 'field_story',
+			'ucp_partner'     => 'partner',
+			'ucp_team'        => 'team',
+			'ucp_field_story' => 'field_story',
 		);
+		$asset = isset( $assets[ $screen->post_type ] ) ? $assets[ $screen->post_type ] : '';
+		if ( $asset ) {
+			wp_enqueue_script(
+				'urbancareproject-' . $asset . '-fields',
+				URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-' . $asset . '-fields.js',
+				array( 'jquery' ),
+				URBANCAREPROJECT_VERSION,
+				true
+			);
+		}
+		if ( 'ucp_activity' === $screen->post_type ) {
+			wp_enqueue_script(
+				'urbancareproject-gallery-relations',
+				URBANCAREPROJECT_URL . 'includes/admin/js/urbancareproject-gallery-relations.js',
+				array( 'jquery' ),
+				URBANCAREPROJECT_VERSION,
+				true
+			);
+		}
 		if ( 'activity' === $asset ) {
 			wp_localize_script(
 				'urbancareproject-activity-fields',
@@ -268,7 +290,8 @@ class UrbanCareProject_Fields {
 				array(),
 				URBANCAREPROJECT_VERSION
 			);
-		} elseif ( 'field_story' === $asset ) {
+		}
+		if ( 'field_story' === $asset || in_array( $screen->post_type, array( 'ucp_activity', 'ucp_study_site' ), true ) ) {
 			wp_enqueue_style(
 				'urbancareproject-field-story-fields',
 				URBANCAREPROJECT_URL . 'includes/admin/css/urbancareproject-field-story-fields.css',
@@ -546,7 +569,7 @@ class UrbanCareProject_Fields {
 		<div class="ucp-gallery-relations" data-ucp-gallery-relations>
 			<input type="hidden" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( implode( ',', $gallery_ids ) ); ?>" data-ucp-gallery-relation-ids />
 			<div class="ucp-gallery-relations__picker">
-				<select data-ucp-gallery-relation-picker>
+				<select id="<?php echo esc_attr( ltrim( $key, '_' ) ); ?>" data-ucp-gallery-relation-picker>
 					<option value=""><?php esc_html_e( 'Select a published gallery', 'urbancareproject' ); ?></option>
 					<?php foreach ( $galleries as $gallery ) : ?>
 						<option value="<?php echo esc_attr( $gallery->ID ); ?>" data-title="<?php echo esc_attr( get_the_title( $gallery ) ); ?>"><?php echo esc_html( get_the_title( $gallery ) ); ?></option>
