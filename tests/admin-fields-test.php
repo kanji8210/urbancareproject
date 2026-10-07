@@ -106,6 +106,9 @@ $study_site_fields = UrbanCareProject_Metadata::fields()['ucp_study_site'];
 if ( 'gallery' !== $study_site_fields['_ucp_gallery_ids']['input'] || 'gallery_select' !== $study_site_fields['_ucp_related_gallery_ids']['input'] ) {
 	throw new RuntimeException( 'Study Site galleries do not use image and reusable Gallery selectors.' );
 }
+if ( 'activity_select' !== $study_site_fields['_ucp_related_activity_ids']['input'] || 'sanitize_activity_id_array' !== $study_site_fields['_ucp_related_activity_ids']['sanitize'] ) {
+	throw new RuntimeException( 'Study Site related Activities are not configured as a validated multi-select.' );
+}
 if ( 'gallery_select' !== UrbanCareProject_Metadata::fields()['ucp_field_story']['_ucp_related_gallery_ids']['input'] ) {
 	throw new RuntimeException( 'Field Story reusable galleries are not selected from the Gallery list.' );
 }
@@ -320,7 +323,7 @@ if ( 'Noonkopir, Kitengela, Kajiado County' !== $GLOBALS['ucp_test_meta']['_ucp_
 if ( -1.4692 !== $GLOBALS['ucp_test_meta']['_ucp_latitude'] || 36.9586 !== $GLOBALS['ucp_test_meta']['_ucp_longitude'] || true !== $GLOBALS['ucp_test_meta']['_ucp_coordinates_verified'] ) {
 	throw new RuntimeException( 'Study Site verified coordinates were not saved correctly.' );
 }
-if ( array( 31, 32 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 51 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_gallery_ids'] || array( 41, 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
+if ( array( 31, 32 ) !== $GLOBALS['ucp_test_meta']['_ucp_gallery_ids'] || array( 51 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_gallery_ids'] || array( 42 ) !== $GLOBALS['ucp_test_meta']['_ucp_related_activity_ids'] ) {
 	throw new RuntimeException( 'Study Site gallery or related activities were not retained.' );
 }
 

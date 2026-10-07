@@ -137,7 +137,7 @@ class UrbanCareProject_Metadata {
 				'_ucp_coordinates_verified' => self::field( 'Coordinates verified', 'checkbox', 'boolean', false, 'sanitize_boolean' ),
 				'_ucp_gallery_ids'         => self::typed_id_array_field( 'Gallery images', 'gallery', 'sanitize_image_id_array' ),
 				'_ucp_related_gallery_ids' => self::typed_id_array_field( 'Reusable galleries', 'gallery_select', 'sanitize_gallery_id_array' ),
-				'_ucp_related_activity_ids' => self::id_array_field( 'Related activity IDs' ),
+				'_ucp_related_activity_ids' => self::typed_id_array_field( 'Related activities', 'activity_select', 'sanitize_activity_id_array' ),
 			),
 			'ucp_field_story' => array(
 				'_ucp_gallery_ids'       => self::typed_id_array_field( 'Gallery', 'gallery', 'sanitize_image_id_array' ),
