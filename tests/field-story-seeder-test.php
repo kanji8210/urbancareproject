@@ -79,6 +79,17 @@ if ( 2 !== count( $stories ) || 7 !== count( $GLOBALS['ucp_seed_attachments'] ) 
 $kitengela = get_page_by_path( 'research-in-action-across-kitengela', OBJECT, 'ucp_field_story' );
 if ( ! $kitengela || true !== $GLOBALS['ucp_seed_meta'][ $kitengela->ID ]['_ucp_featured'] || 0 !== $GLOBALS['ucp_seed_meta'][ $kitengela->ID ]['_ucp_display_order'] ) throw new RuntimeException( 'Kitengela story was not seeded as the primary homepage feature.' );
 if ( array( 201, 202 ) !== $GLOBALS['ucp_seed_meta'][ $kitengela->ID ]['_ucp_related_site_ids'] || array( 301, 302, 303, 304 ) !== $GLOBALS['ucp_seed_meta'][ $kitengela->ID ]['_ucp_related_activity_ids'] ) throw new RuntimeException( 'Kitengela story source relations were not resolved by stable slug.' );
+$legacy_content = '<p>Urban Care combines environmental science, social science, and public health through fieldwork carried out with local residents and neighborhood associations. Community collaborators help researchers navigate changing neighborhoods, conduct surveys, and connect scientific questions with everyday experience.</p><p>At community boreholes, surveys and water-quality work examine access, use, and possible contamination. In Noonkopir, portable sensors extend this environmental monitoring to the air near a school and a dumpsite, helping the team understand how settlement, roads, waste, and pollution shape exposure.</p><p>These encounters are part of a wider science-society approach: evidence is produced through shared observation, dialogue, and practical work across the places where urban change is unfolding.</p>';
+if ( strlen( $kitengela->post_content ) <= strlen( $legacy_content ) || false === strpos( $kitengela->post_content, '<h2>Land-use change and land-market surveys</h2>' ) || false === strpos( $kitengela->post_content, 'very frequently reported among children.' ) ) throw new RuntimeException( 'The seeded Collective Fieldwork story is not complete.' );
+$GLOBALS['ucp_seed_posts'][ $kitengela->ID ]['post_content'] = $legacy_content;
+$seeder->seed();
+$kitengela = get_page_by_path( 'research-in-action-across-kitengela', OBJECT, 'ucp_field_story' );
+if ( $kitengela->post_content === $legacy_content || false === strpos( $kitengela->post_content, '<h2>Public health surveys</h2>' ) ) throw new RuntimeException( 'The unchanged legacy Field Story was not upgraded to full content.' );
+$editor_content = '<p>Updated by a WordPress editor.</p>';
+$GLOBALS['ucp_seed_posts'][ $kitengela->ID ]['post_content'] = $editor_content;
+$seeder->seed();
+$kitengela = get_page_by_path( 'research-in-action-across-kitengela', OBJECT, 'ucp_field_story' );
+if ( $kitengela->post_content !== $editor_content ) throw new RuntimeException( 'The Field Story migration overwrote editor-managed content.' );
 $insert_count = $GLOBALS['ucp_seed_insert_count'];
 $seeder->seed();
 if ( $insert_count !== $GLOBALS['ucp_seed_insert_count'] || 7 !== count( $GLOBALS['ucp_seed_attachments'] ) ) throw new RuntimeException( 'Field Story seeding is not idempotent.' );

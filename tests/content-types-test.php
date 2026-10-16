@@ -37,6 +37,10 @@ if ( ! isset( $GLOBALS['ucp_test_post_types']['ucp_gallery'] ) || ! in_array( 'e
 	throw new RuntimeException( 'Reusable galleries are not registered with editable descriptions.' );
 }
 
+if ( ! isset( $GLOBALS['ucp_test_post_types']['ucp_field_story'] ) || ! in_array( 'editor', $GLOBALS['ucp_test_post_types']['ucp_field_story']['supports'], true ) || ! in_array( 'excerpt', $GLOBALS['ucp_test_post_types']['ucp_field_story']['supports'], true ) ) {
+	throw new RuntimeException( 'Field Stories do not support full content and excerpts.' );
+}
+
 if ( $GLOBALS['ucp_test_post_types']['ucp_gallery']['public'] || $GLOBALS['ucp_test_post_types']['ucp_gallery']['publicly_queryable'] || ! $GLOBALS['ucp_test_post_types']['ucp_gallery']['show_ui'] ) {
 	throw new RuntimeException( 'Reusable galleries must be editable without exposing public archive pages.' );
 }

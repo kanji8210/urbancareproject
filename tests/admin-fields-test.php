@@ -109,8 +109,9 @@ if ( 'gallery' !== $study_site_fields['_ucp_gallery_ids']['input'] || 'gallery_s
 if ( 'activity_select' !== $study_site_fields['_ucp_related_activity_ids']['input'] || 'sanitize_activity_id_array' !== $study_site_fields['_ucp_related_activity_ids']['sanitize'] ) {
 	throw new RuntimeException( 'Study Site related Activities are not configured as a validated multi-select.' );
 }
-if ( 'gallery_select' !== UrbanCareProject_Metadata::fields()['ucp_field_story']['_ucp_related_gallery_ids']['input'] ) {
-	throw new RuntimeException( 'Field Story reusable galleries are not selected from the Gallery list.' );
+$field_story_fields = UrbanCareProject_Metadata::fields()['ucp_field_story'];
+if ( 'gallery' !== $field_story_fields['_ucp_gallery_ids']['input'] || 'gallery_select' !== $field_story_fields['_ucp_related_gallery_ids']['input'] ) {
+	throw new RuntimeException( 'Field Story direct images and reusable galleries are not selectable.' );
 }
 
 $publications = UrbanCareProject_Metadata::sanitize_publications(

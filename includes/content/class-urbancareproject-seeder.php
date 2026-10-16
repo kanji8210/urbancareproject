@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class UrbanCareProject_Seeder {
 	const PROJECT_ID_OPTION = 'ucp_canonical_project_id';
 	const SEED_VERSION_OPTION = 'ucp_content_seed_version';
-	const SEED_VERSION = '4';
+	const SEED_VERSION = '5';
 
 	public function seed() {
 		$this->seed_terms();
@@ -191,7 +191,16 @@ class UrbanCareProject_Seeder {
 
 	private function seed_field_stories() {
 		foreach ( $this->field_story_definitions() as $story ) {
-			if ( get_page_by_path( $story['slug'], OBJECT, 'ucp_field_story' ) ) {
+			$existing = get_page_by_path( $story['slug'], OBJECT, 'ucp_field_story' );
+			if ( $existing ) {
+				if ( isset( $story['legacy_content'] ) && isset( $existing->post_content ) && $story['legacy_content'] === $existing->post_content ) {
+					wp_update_post(
+						array(
+							'ID'           => $existing->ID,
+							'post_content' => $story['content'],
+						)
+					);
+				}
 				continue;
 			}
 
@@ -314,7 +323,8 @@ class UrbanCareProject_Seeder {
 				'slug'              => 'research-in-action-across-kitengela',
 				'title'             => 'Research in action across Kitengela',
 				'excerpt'           => 'Across Kitengela, Urban Care works with residents while surveying community water points and monitoring air quality near schools and waste sites.',
-				'content'           => '<p>Urban Care combines environmental science, social science, and public health through fieldwork carried out with local residents and neighborhood associations. Community collaborators help researchers navigate changing neighborhoods, conduct surveys, and connect scientific questions with everyday experience.</p><p>At community boreholes, surveys and water-quality work examine access, use, and possible contamination. In Noonkopir, portable sensors extend this environmental monitoring to the air near a school and a dumpsite, helping the team understand how settlement, roads, waste, and pollution shape exposure.</p><p>These encounters are part of a wider science-society approach: evidence is produced through shared observation, dialogue, and practical work across the places where urban change is unfolding.</p>',
+				'legacy_content'   => '<p>Urban Care combines environmental science, social science, and public health through fieldwork carried out with local residents and neighborhood associations. Community collaborators help researchers navigate changing neighborhoods, conduct surveys, and connect scientific questions with everyday experience.</p><p>At community boreholes, surveys and water-quality work examine access, use, and possible contamination. In Noonkopir, portable sensors extend this environmental monitoring to the air near a school and a dumpsite, helping the team understand how settlement, roads, waste, and pollution shape exposure.</p><p>These encounters are part of a wider science-society approach: evidence is produced through shared observation, dialogue, and practical work across the places where urban change is unfolding.</p>',
+				'content'           => $this->full_collective_fieldwork_content(),
 				'lenses'            => array(
 					array( 'title' => 'Working with residents', 'description' => 'Local residents and neighborhood associations help shape field surveys, communication, and knowledge exchange.' ),
 					array( 'title' => 'Surveying community boreholes', 'description' => 'Field teams connect water-quality sampling with questions about access, use, and everyday health.' ),
@@ -364,5 +374,42 @@ class UrbanCareProject_Seeder {
 				),
 			),
 		);
+	}
+
+	private function full_collective_fieldwork_content() {
+		return <<<'HTML'
+<p>All these surveys were implemented in close collaboration with the residents' associations of the neighborhoods concerned.</p>
+<h2>Land-use change and land-market surveys</h2>
+<h3>Longitudinal analysis of land markets</h3>
+<p>Kitengela is a small town that is rapidly growing both demographically and spatially, attracting residents from Nairobi as well as inhabitants of nearby towns and villages. When the country gained independence, the land surrounding Kitengela was allocated to the Maasai community, who formed ranches, or management groups, to govern it. Today, Maasai families possess individual private land titles as the result of a gradual process of land fragmentation that began in the 1980s.</p>
+<p>We conduct in-depth, long-term interviews within the peri-urban study sites to analyze the evolution of land markets over time. After identifying the main drivers and actors involved, we examine these areas through the lens of the formalization of land rights. This process has progressively individualized relationships to land, increased its market value, contributed to socially selective dynamics, and fueled intense resale activity in the form of small residential plots.</p>
+<p>This transformation is visible on the ground through the systematic marking of future subdivisions: pegs, beacons, live fences, and concrete-block walls increasingly replace the isolated trees and symbolic markers that previously defined customary communal land rights.</p>
+<p>Our objective is to better understand the choices, strategies, and constraints shaping these peri-urban land markets. The research focuses on three interrelated dimensions of change:</p>
+<ul>
+	<li>Changes in property ownership: the shift toward more individualized land rights and the gradual registration of titles, calling for a sociological understanding of property and tenure transitions.</li>
+	<li>Changes in land use: the economic valorization of land through self-construction and real-estate promotion, or its withdrawal from agriculture without immediate construction, resulting in long-term fallow plots.</li>
+	<li>Changes in land size and configuration: the fragmentation of rural holdings into smaller residential parcels that often enter chains of transactions before being built upon.</li>
+</ul>
+<p>Upstream, we examine the redistribution of customary land rights, the individualization of ownership through mother titles, intra-family subdivisions, the factors driving land sales, and the reinvestment of land proceeds. At the intermediate stage, we analyze the division of mother titles, sources of capital, plot-level investments, and links with commercial activities. Downstream, we focus on plot sales, the sources of capital mobilized by buyers, investments on plots, and investments in infrastructure and services.</p>
+<p>Where available, cadastral sources are also used. We distinguish between:</p>
+<ul>
+	<li>Registered properties resulting from new administrative cessions on the rural peripheries of the metropolis, known as mother titles.</li>
+	<li>The massive supply of small titled plots intended for housing, generated through the private subdivision of titles previously established on agricultural land.</li>
+</ul>
+<p>We digitize the maps and update information extracted from cadastral maps to measure the areas of land built or subdivided over the years. Statistical and cartographic analyses are complemented by surveys of new residential plots and land subdivisions, both formal and informal, using Google Earth imagery.</p>
+<h2>Service access and residential mobility surveys</h2>
+<p>We also conduct structured questionnaire surveys in the study sites to assess access to services and residential mobility patterns. Data are collected using KoboToolbox and analyzed statistically and spatially.</p>
+<p>We investigate whether subdivision processes are accompanied by housing investments and turnkey developments, as well as the architectural innovations they introduce. We further examine the needs and expectations of new residents in terms of public services and facilities. To what extent do land operators and real-estate developers provide basic services within their estates? Do they integrate local infrastructure, plan connections to existing technical networks, or develop autonomous systems?</p>
+<p>Where public networks are absent or delayed, we analyze whether residents' associations step in to manage local networks, invest in alternative infrastructure such as boreholes, deep wastewater reinjection, and hybrid energy solutions, or develop other forms of service provision. Finally, we explore daily mobility patterns: how residents commute to workplaces, and how these metropolitan peripheries are connected to places of education, healthcare, and social life.</p>
+<h2>Pollution and environmental transformation surveys</h2>
+<p>Air pollution is assessed using monitoring devices deployed across several sampling points. Sensors are installed in collaboration with local residents and the municipal team, with explanations about their operation, maintenance, and data-collection procedures. A sensor in the courtyard of a school about 100 metres from Kitengela's main dumpsite operated for several months, archiving data across seasons and under varying temperature and humidity conditions, as well as according to activities at the dumpsite during the day and at night. Two other sensors were installed in Kitengela town near the main road, and another on the outskirts in the gradually growing Enkasiti neighborhood. Portable sensors were also used along the main roads.</p>
+<p>Water-quality analyses focus on microbial contamination and heavy metals in boreholes and major water bodies, including the Athi River, Kisuju, Green Valley, and Ilkeek Lemedungi.</p>
+<p>Water-sampling fieldwork brought the social-science and environmental-science teams together to select boreholes representative of different neighborhoods. These ranged from highly urbanized parts of Kitengela and its urban periphery to largely rural, sparsely populated areas where land markets are already highly active.</p>
+<p>Water samples were collected directly from boreholes and placed in separate containers for microbiological and heavy-metal analyses, since their protocols differ. Residents were informed during sampling, and managers of community boreholes accompanied the scientific team.</p>
+<p>Soil sampling targets places affected by human activity, including quarries, industrial yards, roadside corridors, dumpsites, and residential edges. Composite topsoil samples are collected because this layer typically reflects the highest accumulation of pollutants from atmospheric deposition and surface runoff. Sites were selected through a process similar to that used for the boreholes.</p>
+<h2>Public health surveys</h2>
+<p>For the health surveys, more than 700 questionnaires were first administered across different study sites to assess residents' health risks, their perception of those risks, and the everyday adjustments made in response to pollution exposure.</p>
+<p>One of Kitengela's major challenges is residents' long-term exposure to dust, which has been linked to significant health problems and is very frequently reported among children.</p>
+HTML;
 	}
 }
